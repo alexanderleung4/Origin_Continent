@@ -28,7 +28,7 @@ public class InventoryManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    public void AddItem(ItemData item, int count = 1)
+    public void AddItem(ItemData item, int count = 1, bool isSilent = false)
     {
         if (item == null) return;
         bool itemAdded = false;
@@ -40,6 +40,10 @@ public class InventoryManager : MonoBehaviour
         if (!itemAdded) inventory.Add(new InventorySlot(item, count));
         Debug.Log($"[Inventory] 获得: {item.itemName} x{count}");
         OnInventoryChanged?.Invoke();
+        if (!isSilent && UI_SystemToast.Instance != null)
+        {
+            UI_SystemToast.Instance.Show(item.name, $"获得物品: {item.itemName}", count, item.icon);
+        }
     }
     // --- 👇 新增: 卸下装备并放回背包 ---
     public void UnequipItem(EquipmentSlot slot)

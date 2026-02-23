@@ -222,6 +222,7 @@ public class RuntimeCharacter
 
     public void GainExp(int amount)
     {
+        int startLevel = Level;
         if (Level >= data.maxLevel) return;
 
         CurrentExp += amount;
@@ -232,6 +233,13 @@ public class RuntimeCharacter
         while (Level < data.maxLevel && CurrentExp >= GetExpForLevel(Level + 1))
         {
             LevelUp();
+        }
+
+        if (Level > startLevel && GameManager.Instance != null && GameManager.Instance.Player != null && GameManager.Instance.Player == this && UI_SystemToast.Instance != null)
+        {
+            int levelsGained = Level - startLevel;
+            string prefix = levelsGained > 1 ? "连升多级！当前: Lv." : "升级啦！当前: Lv.";
+            UI_SystemToast.Instance.Show("LevelUp", $"{prefix}{Level}", 0, null);
         }
     }
 

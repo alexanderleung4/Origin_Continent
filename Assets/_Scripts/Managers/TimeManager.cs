@@ -64,6 +64,10 @@ public class TimeManager : MonoBehaviour
             currentDay++;
             dayChanged = true; // 标记
             Debug.Log($"[TimeManager] 新的一天开始了: 第 {currentDay} 天");
+            if (UI_SystemToast.Instance != null)
+            {
+                UI_SystemToast.Instance.Show("NewDay", $"新的一天开始了：第 {currentDay} 天", 0, null);
+            }
             // 这里以后可以触发 "每日结算" 或 "寿命扣除"
         }
 
@@ -78,6 +82,7 @@ public class TimeManager : MonoBehaviour
 
     // --- 核心功能: 休息/跳过时间 ---
     //[cite_start]// 对应白皮书 V1.3: 强制跳过至次日 08:00 AM [cite: 47]
+    [ContextMenu("Test: Skip to Next Day (一键跨天)")]
     public void RestToNextDay()
     {
         currentDay++;
@@ -89,6 +94,10 @@ public class TimeManager : MonoBehaviour
         NotifyTimeChange();
         // 休息肯定会跨天，触发事件
         OnDayChanged?.Invoke(currentDay);
+        if (UI_SystemToast.Instance != null)
+        {
+            UI_SystemToast.Instance.Show("NewDay", $"休息完毕：第 {currentDay} 天", 0, null);
+        }
     }
 
     // --- 内部逻辑: 检查昼夜更替 ---

@@ -826,6 +826,10 @@ public class BattleManager : MonoBehaviour
             if (actuallyWon)
             {
                 LogBattle("战斗胜利！");
+                if (TimeManager.Instance != null)
+                {
+                    TimeManager.Instance.AdvanceTime(60);
+                }
                 if (AudioManager.Instance != null) waitTime = AudioManager.Instance.PlayCombatJingle(true) + 0.5f;
                 
                 int expGain = 0, goldGain = 0;
@@ -859,7 +863,11 @@ public class BattleManager : MonoBehaviour
                 }
 
                 GetFirstAlivePlayer().runtime.GainExp(expGain);
-                GetFirstAlivePlayer().runtime.Gold += goldGain; 
+                GetFirstAlivePlayer().runtime.Gold += goldGain;
+                if (expGain > 0 && UI_SystemToast.Instance != null)
+                    UI_SystemToast.Instance.Show("BattleExp", "获得经验:", expGain, null);
+                if (goldGain > 0 && UI_SystemToast.Instance != null)
+                    UI_SystemToast.Instance.Show("Gold", "获得金币:", goldGain, null);
                 LogBattle($"获得经验: {expGain}, 金币: {goldGain}");
                 if (hasDrops) LogBattle(dropMsg);
             }

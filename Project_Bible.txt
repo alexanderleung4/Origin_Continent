@@ -1,0 +1,85 @@
+# Project Origin - 全局架构白皮书 (Project Bible)
+**当前版本:** v1.4 (阵列关卡与CTB战斗重构版)
+**维护者:** Director (主策划/主程) & Gemini (AI 架构/协同)
+
+====================================================================
+## 1. 全局脚本拓扑图 (Global Script Topology)
+*注意：AI在编写代码时，严禁自行捏造不存在的类名，必须查阅此表。*
+
+### 📁 Audio
+* SceneMusic
+
+### 📁 Logic
+* RuntimeCharacter
+
+### 📁 Managers (全局单例与核心控制)
+* AudioManager, BattleManager, DialogueManager, GameManager, InventoryManager
+* QuestManager, SaveManager, SceneFader, ShopManager, TimeManager, VFXManager
+
+### 📁 SaveSystem
+* SaveData (负责序列化落地的核心数据结构)
+
+### 📁 Scriptables (静态配置与数据中心)
+* BuffData, CharacterData, DialogueData, EquipmentData, ItemData
+* LocationData, LootTable, QuestData, ShopData, SkillData, StageData
+* 🤖 子文件夹 AI: AI_Aggressive, AI_Pattern, AI_Smart, AIProfileBase
+
+### 📁 UI (视图层交互)
+* UI_Battle, UI_BattleEntity, UI_CharacterSheet, UI_CutIn, UI_Interaction
+* UI_Inventory, UI_Navigation, UI_QuestLog, UI_QuestSlot, UI_SaveMenu
+* UI_SaveSlot, UI_SceneNPC, UI_SceneStage, UI_Settings, UI_Shop
+* UI_SkillSlot, UI_TimelineIcon, UI_TitleScreen, UIManager, UISound
+* UI_SystemToast (负责全局悬浮播报)
+
+### 📁 Utils (底层工具)
+* AutoDestroy, CSVLoader。
+
+====================================================================
+## 2. 核心系统协议 (Core Protocols)
+
+### ⚔️ 战斗系统 (CTB Battle System)
+* **时间轴引擎:** `ActionDelay = 10000 / Speed`。行动条推演采用 `AdvanceTimeline` 虚拟跑道赛跑。
+* **多目标索敌:** * 必须使用 `List<BattleEntity>` 进行伤害分发。
+  * 范围枚举：`TargetScope.Single`, `TargetScope.AllEnemies`, `TargetScope.Random` 等。
+* **死亡表现 (Corpse Protocol):** * 关闭所有 UI 交互组件 (`hpSlider`, `Button` 等)。
+  * 若有 `bodySprite_Dead` 则替换并设为灰色，否则透明化隐藏。右侧行动条瞬间剔除。
+
+### 🗺️ 大地图与场景 (Map Prefab System)
+* **优先级加载:** `UIManager` 优先实例化 `LocationData.mapPrefab`。
+* **向下兼容:** 若无 Prefab，退回使用 `backgroundImage` 并随机生成 `staticNPCs` 按钮。
+* **完全可视化:** 场景内交互物必须挂载 `UI_SceneNPC` 或 `UI_SceneStage` 以实现自动化装配。
+
+### 💬 对话指令与表现 (Dialogue & Event System)
+* **差分机制:** 严格按照 `Speaker_Expression` (如 `Merchant_Smile`) 从 Resources 寻址。
+* **玩家防丢 (Fallback):** 玩家作为聆听者或说话者时，若找不到对应图片，强制读取 `GameManager.Player.data.bodySprite_Normal`，严禁产生白色占位图。
+* **核心事件语法 (HandleEvent):** * `Battle:EnemyID` (单体战斗)
+  * `Stage:StageID` (阵列关卡)
+  * `Item:ItemID` (获取道具)
+  * `Shop:ShopID` (开启商店)
+  * `Gold:数量`, `Exp:数量`, `Heal`, `Stamina:数量` (数值操作)
+
+### 📢 全局播报系统 (System Toast Protocol)
+* **底层拦截原则:** 播报触发必须深深埋在最底层的数据变动处 (如 `InventoryManager.AddItem` 或 `GainExp` 结算循环后)，严禁在业务逻辑层 (如开宝箱的瞬间) 重复写弹窗代码。
+* **静默阀门 (Silent Valve):** 为防止 SaveManager 读档时引发弹窗雪崩，核心数据写入方法必须提供 `bool isSilent = false` 参数以供静默调用。
+* **智能聚合:** 调用 `UI_SystemToast.Instance.Show()` 时，必须传入准确的 `mergeID` (如 "Gold", item.name)，以实现同类信息的数值相加与屏幕悬停时间重置。
+
+====================================================================
+## 3. 极易混淆变量警示录 (Variable Blacklist/Whitelist)
+*AI 在生成代码时，严格使用以下命名，禁止自行发明相似变量。*
+
+* **图像相关:** `portrait` (对话头像), `bodySprite_Normal` (默认肉身), `bodySprite_Hit` (受击), `bodySprite_Dead` (死亡)。
+* **对话阵营:** `portraitLeft` (永远是 Player 侧), `portraitRight` (永远是 NPC 侧)。
+* **UI 面板:** `dialoguePanel` (对话根节点), `sceneContainer` (地图节点)。
+* **速度计算:** `BaseAV`, `CurrentAV` (绝对禁止混用成 ATB 或 ActionGauge)。
+
+====================================================================
+## 4. 开发协作铁律 (Collaboration Rules)
+1. **零盲猜原则:** AI 遇到不确定的类名或变量时，必须先查阅此表；表中没有的，必须向 Director 提问，严禁自行编造。
+2. **微创手术执行:** 代码修改以“找到函数 X，将第 Y 行替换为 Z”的形式输出，禁止毫无理由地重写整个长脚本。
+3. **安全回滚:** 任何涉及超过 2 个脚本的跨系统修改，Director 需确认本地 Git 已 Commit。
+
+====================================================================
+## 5. 多 Agent 协同拓扑 (Multi-Agent Topology)
+* **制作人 (Director):** 掌握最终合并权、Git 物理防线回滚权与引擎内物理连线装配权。
+* **Gemini (首席架构师):** 负责宏观系统设计、逻辑推演、防雪崩漏洞扫描与微创手术方案 (Diff) 输出。受限于物理隔离，必须依赖高精度上下文。
+* **Cursor (IDE代码缝合官):** 驻扎本地的执行层。每次修改前必须隐式读取此《Project_Bible》与项目根目录的 `.cursorrules`，仅负责安全、精准地将架构师的代码融合进本地，严禁擅自修改未授权逻辑。
