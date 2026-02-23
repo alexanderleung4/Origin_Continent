@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61964c41798338e46849d8dea4a841ed, type: 3}
+  m_Name: Loc_Forest_Deep
+  m_EditorClassIdentifier: 
+  locationID: Loc_Forest_Deep
+  locationName: "\u8FF7\u96FE\u68EE\u6797\u6DF1\u5904"
+  description: "\u8FF7\u96FE\u68EE\u6797\u6DF1\u5904"
+  mapPrefab: {fileID: 5911063781319255584, guid: 2bd8c6a97fefdff4b85c52ecea140bc4, type: 3}
+  backgroundImage: {fileID: 21300000, guid: 9062e2485ce133d4c999eb047350676b, type: 3}
+  backgroundMusic: {fileID: 8300000, guid: 528b979d978ff1948b356be827d56e25, type: 3}
+  connectedLocations:
+  - {fileID: 11400000, guid: 544472585e1134c4f9767c3df54fb566, type: 2}
+  staticNPCs:
+  - {fileID: 11400000, guid: 4075b39382f691448ac9d42890305136, type: 2}
+  isSafeZone: 0

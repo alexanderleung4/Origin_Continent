@@ -1,0 +1,96 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d24dca2edbe5f449b3a1eac2755c929, type: 3}
+  m_Name: Enemy_Slime
+  m_EditorClassIdentifier: 
+  characterName: "\u53F2\u83B1\u59C6"
+  characterID: Slime
+  description: "\u53EF\u7231\u7684\u53F2\u83B1\u59C6"
+  team: 1
+  aiProfile: {fileID: 11400000, guid: 96671df3044b07a419caf64b25787249, type: 2}
+  portrait: {fileID: 21300000, guid: 3899ee300422229479c3efe26316412e, type: 3}
+  bodySprite_Normal: {fileID: 21300000, guid: b8887e1362af88740b2073419a2bf586, type: 3}
+  bodySprite_Hit: {fileID: 21300000, guid: 6810c033858bc0c4c95cd05f9c96e460, type: 3}
+  bodySprite_Dead: {fileID: 21300000, guid: 55560f39b9f4498419df9b5f3512ae8a, type: 3}
+  bodySprite_HalfBroken: {fileID: 0}
+  bodySprite_Broken: {fileID: 0}
+  visualScale: 1
+  linkedShop: {fileID: 0}
+  defaultAffinity: 0
+  defaultDialogue: {fileID: 0}
+  currentStoryCSV: 
+  maxHP: 50
+  maxMP: 20
+  maxStamina: 50
+  attack: 5
+  defense: 0
+  speed: 30
+  baseCritRate: 0.15
+  baseCritDamage: 1.5
+  maxLevel: 100
+  statGrowthCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0.04040404
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 100
+      value: 5
+      inSlope: 0.04040404
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  expCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 100
+      value: 100000
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  growthRate: 1
+  killExpReward: 100
+  killGoldReward: 10
+  lootTable: {fileID: 11400000, guid: 75be9511eee81bb4a8465f4748c7865d, type: 2}
+  startingSkills:
+  - {fileID: 11400000, guid: 40cff1ac334712f45a9bde05d844b04d, type: 2}
+  defaultMaxLifespan: 80
+  lifespanPerLevel: 1
+  isUndead: 0

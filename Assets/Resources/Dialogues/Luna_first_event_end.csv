@@ -1,0 +1,8 @@
+﻿ID,Speaker,Content,Expression,NextID,Event
+start,露娜,没想到你真的做到了,Smile,line_1,
+line_1,Player,还是挺轻松的,Normal,line_2,
+line_2,露娜,注意看你的背包,Normal,line_3,
+line_3,露娜,你获得了史莱姆粘液,Happy,line_4,
+line_4,Player,有什么用吗,Normal,line_5,
+line_5,露娜,他们是你现在的经济来源,Normal,line_6,
+line_6,露娜,就是能换钱，去中央广场找商人交易吧！,Normal,END,SubmitQuest:Quest_Daily_Slime

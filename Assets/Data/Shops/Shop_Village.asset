@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1450063ad9154e94ea370756ae99d529, type: 3}
+  m_Name: Shop_Village
+  m_EditorClassIdentifier: 
+  shopName: "\u901A\u7528\u5546\u5E97"
+  stockItems:
+  - item: {fileID: 11400000, guid: 024d60c0e8e3fbd44833acd45fbdc894, type: 2}
+    maxStock: 5
+    refreshType: 0
+    currentStock: 0
+  - item: {fileID: 11400000, guid: 1023b848fc240b24baaa2cea6a1fb7e8, type: 2}
+    maxStock: 1
+    refreshType: 1
+    currentStock: 0
+  - item: {fileID: 11400000, guid: d3c4bc1ecc2417840a00cdd0746311c0, type: 2}
+    maxStock: 1
+    refreshType: 1
+    currentStock: 0

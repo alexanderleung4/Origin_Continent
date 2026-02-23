@@ -1,0 +1,8 @@
+﻿ID,Speaker,Content,Expression,NextID,Event
+start,Merchant,嘿！你也来到这片大陆了吗？,Smile,line_1,
+line_1,Player,这里是...起源大陆？我感觉头好晕...,Normal,line_2,
+line_2,Merchant,没错。看起来你需要一点帮助。,Normal,line_3,
+line_3,Merchant,这个给你，拿去防身吧！千万别在野外丢了性命。,Smile,line_4,Item:Item_Potion_HP
+line_4,Player,(获得了一瓶药水),Normal,line_5,
+line_5,Merchant,别忘了带点零钱,Normal,line_6,Gold:100
+line_6,Merchant,旅途愉快！,Smile,END,Finish:Dlg_Village_Hello

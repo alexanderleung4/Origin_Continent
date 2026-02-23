@@ -1,0 +1,8 @@
+﻿ID,Speaker,Content,Expression,NextID,Event
+start,露娜,你需要一点实战经验,Smile,line_1,
+line_1,Player,我要怎么做,Normal,line_2,
+line_2,露娜,你知道迷雾森林吗？,Normal,line_3,
+line_3,露娜,去干掉一直史莱姆,Happy,line_4,
+line_4,Player,史莱姆…,Normal,line_5,
+line_5,露娜,没错！,Normal,line_6,
+line_6,露娜,加油哦,Normal,END,AcceptQuest:Quest_Daily_Slime

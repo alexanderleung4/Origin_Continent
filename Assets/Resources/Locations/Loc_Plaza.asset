@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61964c41798338e46849d8dea4a841ed, type: 3}
+  m_Name: Loc_Plaza
+  m_EditorClassIdentifier: 
+  locationID: Loc_Plaza
+  locationName: "\u4E2D\u592E\u5E7F\u573A"
+  description: "\u4E2D\u592E\u5E7F\u573A"
+  backgroundImage: {fileID: 21300000, guid: 6e8c3ba95a5ea614e89af6c8506ede1a, type: 3}
+  backgroundMusic: {fileID: 8300000, guid: 308dea88f8cfa7842aa7019d2af3304e, type: 3}
+  connectedLocations:
+  - {fileID: 11400000, guid: 80e47caf251e3f14f8a6b0dac536f406, type: 2}
+  - {fileID: 11400000, guid: 544472585e1134c4f9767c3df54fb566, type: 2}
+  staticNPCs:
+  - {fileID: 11400000, guid: 55425d5c570d6a94fb42b4312d44b8d9, type: 2}
+  isSafeZone: 1

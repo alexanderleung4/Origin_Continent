@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77465fbb64f28ec43941356d5aa15261, type: 3}
+  m_Name: Brain_Boss_Gatekeeper
+  m_EditorClassIdentifier: 
+  patternList:
+  - {fileID: 11400000, guid: 5baaecfa6d1567644ab5b2fca3fb141c, type: 2}
+  - {fileID: 11400000, guid: 0535ba3c4fcc828429b7a45fb36eb2bf, type: 2}
+  - {fileID: 11400000, guid: 58617fffc4d456a499a3cac5875c1fb8, type: 2}

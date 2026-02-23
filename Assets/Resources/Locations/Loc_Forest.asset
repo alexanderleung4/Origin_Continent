@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61964c41798338e46849d8dea4a841ed, type: 3}
+  m_Name: Loc_Forest
+  m_EditorClassIdentifier: 
+  locationID: Loc_Forest
+  locationName: "\u8FF7\u96FE\u68EE\u6797"
+  description: 
+  backgroundImage: {fileID: 21300000, guid: 9062e2485ce133d4c999eb047350676b, type: 3}
+  backgroundMusic: {fileID: 8300000, guid: da4764277165eca4b9441449a069c764, type: 3}
+  connectedLocations:
+  - {fileID: 11400000, guid: 7cde45d0e9891eb40a3b023bea29cfa7, type: 2}
+  - {fileID: 11400000, guid: e4286aeaf772fb1478980a50db9a5878, type: 2}
+  staticNPCs:
+  - {fileID: 11400000, guid: 809d5e5eefd91d844a2608a238d563dd, type: 2}
+  - {fileID: 11400000, guid: fd78d30b442bd44498e6999c28f9546d, type: 2}
+  - {fileID: 11400000, guid: fd78d30b442bd44498e6999c28f9546d, type: 2}
+  - {fileID: 11400000, guid: fd78d30b442bd44498e6999c28f9546d, type: 2}
+  isSafeZone: 0

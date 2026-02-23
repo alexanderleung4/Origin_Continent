@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1baa85e0848d4d048bb6c87afb29bc63, type: 3}
+  m_Name: SelfHeal
+  m_EditorClassIdentifier: 
+  skillID: skill_heal_01
+  skillName: "\u6062\u590D"
+  description: "\u6062\u590D\u5C11\u91CF\u751F\u547D"
+  icon: {fileID: 10911, guid: 0000000000000000f000000000000000, type: 0}
+  category: 2
+  damageType: 1
+  targetScope: 0
+  mpCost: 10
+  staminaCost: 0
+  cooldownTurns: 0
+  curseCost: 1
+  effects:
+  - effectType: 1
+    effectTarget: 1
+    baseValue: 10
+    scalingStat: 3
+    scalingMultiplier: 0.1
+    hitCount: 1
+    lifestealPercent: 0
+    buffToApply: {fileID: 0}
+  sfxClip: {fileID: 8300000, guid: 05e35bf9670e84349ba36e8347706e54, type: 3}
+  cutInImage: {fileID: 0}
+  cutInType: 2
+  hitVFXPrefab: {fileID: 2100385361559014773, guid: 5ac9036252183c74f9c50c930edbc356, type: 3}

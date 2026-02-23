@@ -1,0 +1,97 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d24dca2edbe5f449b3a1eac2755c929, type: 3}
+  m_Name: Enemy_Goblin
+  m_EditorClassIdentifier: 
+  characterName: "\u54E5\u5E03\u6797"
+  characterID: 
+  description: "\u8FD9\u4E0D\u662F\u6211\u5144\u5F1F\u5417"
+  team: 1
+  aiProfile: {fileID: 11400000, guid: a2f6e8dc9d2686f409457ddba22942e3, type: 2}
+  portrait: {fileID: 21300000, guid: a07ca17e4ff7be547b46d0f779545147, type: 3}
+  bodySprite_Normal: {fileID: 21300000, guid: a07ca17e4ff7be547b46d0f779545147, type: 3}
+  bodySprite_Hit: {fileID: 21300000, guid: ab5600a4c02ec23468ff5bfe230ab53c, type: 3}
+  bodySprite_Dead: {fileID: 21300000, guid: 8297ac54e1c102943a22c23456738b55, type: 3}
+  bodySprite_HalfBroken: {fileID: 0}
+  bodySprite_Broken: {fileID: 0}
+  visualScale: 1
+  linkedShop: {fileID: 0}
+  defaultAffinity: 0
+  defaultDialogue: {fileID: 0}
+  currentStoryCSV: 
+  maxHP: 80
+  maxMP: 20
+  maxStamina: 100
+  attack: 10
+  defense: 0
+  speed: 40
+  baseCritRate: 0.15
+  baseCritDamage: 1.5
+  maxLevel: 100
+  statGrowthCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0.04040404
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 100
+      value: 5
+      inSlope: 0.04040404
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  expCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 100
+      value: 100000
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  growthRate: 1
+  killExpReward: 50
+  killGoldReward: 20
+  lootTable: {fileID: 11400000, guid: 0e39b81db860f904184c889d72098f10, type: 2}
+  startingSkills:
+  - {fileID: 11400000, guid: f1f2ce9d04775d8428c1df53c411ea44, type: 2}
+  - {fileID: 11400000, guid: 18bcf5ee3a8efe947b0f3de8de0c5067, type: 2}
+  defaultMaxLifespan: 80
+  lifespanPerLevel: 1
+  isUndead: 0
