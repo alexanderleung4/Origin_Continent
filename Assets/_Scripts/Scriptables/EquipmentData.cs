@@ -64,11 +64,10 @@ public class EquipmentData : ItemData
     // 只有身体防具(Body)需要填写，用于爆衣系统
     public int maxDurability;       
 
-    // --- 自动配置 ---
-    private void OnEnable()
+    private void OnValidate()
     {
-        type = ItemType.Equipment; // 强制设为装备类型
-        isStackable = false;       // 装备默认不可堆叠
+        type = ItemType.Equipment; 
+        isStackable = false;       // 装备绝对不可堆叠
         maxStack = 1;
     }
 }

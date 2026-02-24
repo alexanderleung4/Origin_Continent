@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: NPC_Merchant
   m_EditorClassIdentifier: 
   characterName: "\u65C5\u884C\u5546\u4EBA"
-  characterID: 
+  characterID: Merchant
   description: "\u65C5\u884C\u5546\u4EBA"
   team: 2
   aiProfile: {fileID: 0}
@@ -89,6 +89,7 @@ MonoBehaviour:
   killExpReward: 50
   killGoldReward: 20
   lootTable: {fileID: 0}
+  defeatCGs: []
   startingSkills: []
   defaultMaxLifespan: 80
   lifespanPerLevel: 1

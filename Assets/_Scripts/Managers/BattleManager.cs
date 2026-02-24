@@ -32,7 +32,15 @@ public class BattleManager : MonoBehaviour
     private BattleEntity currentActor;   // 当前行动者
     private BattleEntity currentTarget;  // 当前选中的目标
 
-    private SkillData pendingSkill; 
+    private SkillData pendingSkill;
+
+    private struct PendingCG
+    {
+        public string eventID;
+        public BattleEntity victim;
+    }
+
+    private List<PendingCG> pendingCGs = new List<PendingCG>();
 
     private UI_Battle ui 
     {
@@ -603,7 +611,8 @@ public class BattleManager : MonoBehaviour
                         int finalDamage = Mathf.RoundToInt(damageFloat) - realTarget.runtime.Defense;
                         finalDamage = Mathf.Max(1, finalDamage);
 
-                        int actualDamageTaken = realTarget.runtime.TakeDamage(finalDamage);
+                        string sourceID = attacker.runtime.data != null ? attacker.runtime.data.characterID ?? "" : "";
+                        int actualDamageTaken = realTarget.runtime.TakeDamage(finalDamage, sourceID);
                         damageDealtThisHit += actualDamageTaken; 
                         
                         if (AudioManager.Instance != null) AudioManager.Instance.PlayHitSound();
@@ -883,7 +892,24 @@ public class BattleManager : MonoBehaviour
             if (AudioManager.Instance != null) waitTime = AudioManager.Instance.PlayCombatJingle(false) + 0.5f;
         }
 
-        StartCoroutine(CloseBattleDelay(waitTime));
+        pendingCGs.Clear();
+        foreach (var entity in allEntities)
+        {
+            if (entity.isDead && entity.runtime != null && entity.runtime.data != null)
+            {
+                string eventID = entity.runtime.data.GetDefeatCG(entity.runtime.lastKillerID);
+                if (!string.IsNullOrEmpty(eventID))
+                {
+                    pendingCGs.Add(new PendingCG
+                    {
+                        eventID = eventID,
+                        victim = entity
+                    });
+                }
+            }
+        }
+
+        StartCoroutine(ProcessCGAndEnd(waitTime));
     }
     public void OnRunButtonClicked() { if (state == BattleState.PlayerMenu) StartCoroutine(AttemptEscape()); }
 
@@ -919,6 +945,41 @@ public class BattleManager : MonoBehaviour
             yield return new WaitForSeconds(1f);
             StartCoroutine(EnemyTurn());
         }
+    }
+
+    private IEnumerator ProcessCGAndEnd(float initialWait)
+    {
+        yield return new WaitForSeconds(initialWait);
+        while (pendingCGs.Count > 0)
+        {
+            var current = pendingCGs[0];
+            pendingCGs.RemoveAt(0);
+
+            BattleEntity entity = current.victim;
+            string eventID = current.eventID;
+
+            if (entity != null && entity.runtime != null)
+            {
+                bool armorDestroyed = entity.runtime.SetDurability(EquipmentSlot.Body, 0);
+
+                if (armorDestroyed && UI_SystemToast.Instance != null && entity.runtime.data != null)
+                {
+                    string cName = !string.IsNullOrEmpty(entity.runtime.data.characterName)
+                                   ? entity.runtime.data.characterName
+                                   : entity.runtime.Name;
+                    UI_SystemToast.Instance.Show("ArmorDestroyed", $"{cName} 的防具已彻底损毁！", 0, null);
+                }
+
+                entity.runtime.CurrentHP = 1;
+            }
+
+            if (DialogueManager.Instance != null)
+            {
+                DialogueManager.Instance.StartDialogue(eventID);
+                yield return new WaitUntil(() => DialogueManager.Instance == null || !DialogueManager.Instance.IsActive);
+            }
+        }
+        yield return StartCoroutine(CloseBattleDelay(0f));
     }
 
     private IEnumerator CloseBattleDelay(float delay)

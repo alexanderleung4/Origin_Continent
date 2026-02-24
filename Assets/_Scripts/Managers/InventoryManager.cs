@@ -105,11 +105,19 @@ public class InventoryManager : MonoBehaviour
                 Debug.Log($"使用了 {item.itemName}");
             }
         }
-        // 👇 分流 B: 装备 (新增逻辑)
-        // EquipmentData 继承自 ItemData
+            // 👇 分流 B: 装备 (升级为路由到详情面板)
         else if (item is EquipmentData equipData) 
         {
-            EquipItemLogic(equipData);
+            if (UI_EquipmentDetailPanel.Instance != null)
+            {
+                // 拦截成功，弹出面板，告诉它是从背包(Inventory)打开的
+                UI_EquipmentDetailPanel.Instance.OpenPanel(equipData, EquipmentPanelSource.Inventory);
+            }
+            else
+            {
+                // 保底逻辑：如果 UI 还没做完，直接穿上
+                EquipItemLogic(equipData);
+            }
         }
         else
         {
@@ -118,7 +126,7 @@ public class InventoryManager : MonoBehaviour
     }
 
     // --- 👇 装备逻辑实现 ---
-    private void EquipItemLogic(EquipmentData newEquip)
+    public void EquipItemLogic(EquipmentData newEquip)
     {
         RuntimeCharacter player = GameManager.Instance.Player;
         if (player == null) return;

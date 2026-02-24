@@ -13,6 +13,9 @@ public class DialogueManager : MonoBehaviour
     public TextMeshProUGUI speakerText;   // 说话人名字
     public TextMeshProUGUI contentText;   // 说话内容
     public Button continueButton;         // 继续/跳过按钮 (建议全屏透明)
+    public Image cgBackground;            // 全屏 CG 图像组件
+    public CanvasGroup uiContentGroup;    // 包含名字、对话框和立绘的父节点 (用于一键隐藏)
+    public Button btnRestoreFullUI;       // 全屏透明恢复按钮 (平时隐藏，UI消失时激活)
 
     [Header("Portraits (双轨立绘)")]
     public Image portraitLeft;            // 左侧立绘 (专门留给 Player)
@@ -41,7 +44,12 @@ public class DialogueManager : MonoBehaviour
         // 绑定点击事件：根据当前状态决定是“跳过打字”还是“下一句”
         if (continueButton != null) 
             continueButton.onClick.AddListener(OnContinueClicked);
-            
+        if (cgBackground != null) cgBackground.gameObject.SetActive(false);
+        if (btnRestoreFullUI != null) 
+        {
+            btnRestoreFullUI.gameObject.SetActive(false);
+            btnRestoreFullUI.onClick.AddListener(ShowUI);
+        }
         EndDialogue();
     }
 
@@ -52,6 +60,13 @@ public class DialogueManager : MonoBehaviour
     {
         if (data == null || data.lines == null || data.lines.Count == 0) return;
         StartDialogueInternal(data.lines);
+    }
+
+    public void StartDialogue(string dialogueID)
+    {
+        if (string.IsNullOrEmpty(dialogueID)) return;
+        DialogueData data = Resources.Load<DialogueData>($"Dialogues/{dialogueID}");
+        if (data != null) StartDialogue(data);
     }
 
     public void StartDialogueCSV(string csvFileName)
@@ -71,6 +86,14 @@ public class DialogueManager : MonoBehaviour
         if (portraitLeft != null) portraitLeft.gameObject.SetActive(false);
         if (portraitRight != null) portraitRight.gameObject.SetActive(false);
 
+        // 进场时重置全屏 CG 与 UI 显示状态
+        if (cgBackground != null) cgBackground.gameObject.SetActive(false);
+        if (uiContentGroup != null)
+        {
+            uiContentGroup.alpha = 1f;
+            uiContentGroup.blocksRaycasts = true;
+        }
+
         linesQueue.Clear();
         foreach (var line in lines) linesQueue.Enqueue(line);
 
@@ -81,6 +104,26 @@ public class DialogueManager : MonoBehaviour
     // 2. 核心演出流转
     // ========================================================================
     
+    public void HideUI()
+    {
+        if (uiContentGroup != null) 
+        {
+            uiContentGroup.alpha = 0f;
+            uiContentGroup.blocksRaycasts = false;
+        }
+        if (btnRestoreFullUI != null) btnRestoreFullUI.gameObject.SetActive(true);
+    }
+
+    public void ShowUI()
+    {
+        if (uiContentGroup != null) 
+        {
+            uiContentGroup.alpha = 1f;
+            uiContentGroup.blocksRaycasts = true;
+        }
+        if (btnRestoreFullUI != null) btnRestoreFullUI.gameObject.SetActive(false);
+    }
+
     public void OnContinueClicked()
     {
         if (isTyping)
@@ -126,6 +169,30 @@ public class DialogueManager : MonoBehaviour
 
         if (speakerText != null) speakerText.text = displayName;
 
+        // --- 处理全屏背景 ---
+        if (!string.IsNullOrEmpty(line.backgroundID))
+        {
+            string bgKey = line.backgroundID.ToLower();
+            if (bgKey == "none" || bgKey == "clear")
+            {
+                // 强制关闭全屏 CG，切回普通立绘模式
+                if (cgBackground != null) cgBackground.gameObject.SetActive(false);
+            }
+            else
+            {
+                Sprite bgSprite = Resources.Load<Sprite>($"Backgrounds/{line.backgroundID}");
+                if (bgSprite != null && cgBackground != null)
+                {
+                    cgBackground.sprite = bgSprite;
+                    cgBackground.gameObject.SetActive(true);
+
+                    // 有全屏 CG 时，强制隐藏左右立绘
+                    if (portraitLeft != null) portraitLeft.gameObject.SetActive(false);
+                    if (portraitRight != null) portraitRight.gameObject.SetActive(false);
+                }
+            }
+        }
+
         // --- B. 差分立绘寻址 (Speaker + Expression) ---
         Sprite targetSprite = line.portrait; 
 
@@ -148,27 +215,24 @@ public class DialogueManager : MonoBehaviour
             targetSprite = GameManager.Instance.Player.data.bodySprite_Normal;
         }
 
-        // --- C. 阵营分发与舞台表现 ---
-        if (isPlayer)
+        // --- C. 阵营分发与舞台表现 (有 CG 时立绘已隐藏，此处仅无 backgroundID 时显示) ---
+        if (string.IsNullOrEmpty(line.backgroundID))
         {
-            // 玩家说话：左侧高亮
-            SetupPortrait(portraitLeft, targetSprite, true);
-            // 右侧 NPC 聆听 (维持原图并变暗)
-            SetupPortrait(portraitRight, portraitRight != null ? portraitRight.sprite : null, false);
-        }
-        else
-        {
-            // NPC说话：右侧高亮
-            SetupPortrait(portraitRight, targetSprite, true);
-            
-            // 👇 绝杀白方块的核心：如果 NPC 先说话，而左侧玩家目前是空的，
-            // 我们主动去拿玩家的默认立绘，让他作为“聆听者”完美登场！
-            Sprite leftSprite = portraitLeft != null ? portraitLeft.sprite : null;
-            if (leftSprite == null && GameManager.Instance != null && GameManager.Instance.Player != null && GameManager.Instance.Player.data != null)
+            if (isPlayer)
             {
-                leftSprite = GameManager.Instance.Player.data.bodySprite_Normal;
+                SetupPortrait(portraitLeft, targetSprite, true);
+                SetupPortrait(portraitRight, portraitRight != null ? portraitRight.sprite : null, false);
             }
-            SetupPortrait(portraitLeft, leftSprite, false);
+            else
+            {
+                SetupPortrait(portraitRight, targetSprite, true);
+                Sprite leftSprite = portraitLeft != null ? portraitLeft.sprite : null;
+                if (leftSprite == null && GameManager.Instance != null && GameManager.Instance.Player != null && GameManager.Instance.Player.data != null)
+                {
+                    leftSprite = GameManager.Instance.Player.data.bodySprite_Normal;
+                }
+                SetupPortrait(portraitLeft, leftSprite, false);
+            }
         }
 
         // --- D. 启动打字机 ---
@@ -228,6 +292,13 @@ public class DialogueManager : MonoBehaviour
     private void EndDialogue()
     {
         IsActive = false;
+        // 离场时重置全屏 CG 与 UI 显示状态，防止残留与假死
+        if (cgBackground != null) cgBackground.gameObject.SetActive(false);
+        if (uiContentGroup != null)
+        {
+            uiContentGroup.alpha = 1f;
+            uiContentGroup.blocksRaycasts = true;
+        }
         if (dialoguePanel != null) dialoguePanel.SetActive(false);
         if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Dialogue) 
         {

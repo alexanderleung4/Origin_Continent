@@ -31,6 +31,15 @@ public enum TeamType
 // 2. 数据类定义
 // ===================================================================================
 
+[System.Serializable]
+public struct DefeatCGConfig
+{
+    [Tooltip("击杀者的 CharacterID (留空或填 Default 代表默认CG)")]
+    public string killerID;
+    [Tooltip("触发的 CG Event ID")]
+    public string cgEventID;
+}
+
 [CreateAssetMenu(fileName = "NewCharacter", menuName = "Origin/Character Data")]
 public class CharacterData : ScriptableObject
 {
@@ -99,6 +108,21 @@ public class CharacterData : ScriptableObject
     public int killExpReward = 50;  // ✅ [核心] 怪物给经验
     public int killGoldReward = 20; // ✅ [核心] 怪物给钱
     public LootTable lootTable;     // ✅ [核心] 掉落包
+
+    [Header("🎬 Defeat & CG (战败与演出)")]
+    public List<DefeatCGConfig> defeatCGs = new List<DefeatCGConfig>();
+
+    public string GetDefeatCG(string killerID)
+    {
+        if (defeatCGs == null || defeatCGs.Count == 0) return string.Empty;
+        string defaultCG = string.Empty;
+        foreach (var config in defeatCGs)
+        {
+            if (config.killerID == killerID) return config.cgEventID;
+            if (string.IsNullOrEmpty(config.killerID) || config.killerID.ToLower() == "default") defaultCG = config.cgEventID;
+        }
+        return defaultCG;
+    }
 
     [Header("💪 Skills (技能)")]
     public List<SkillData> startingSkills; // ✅ [核心] 初始技能

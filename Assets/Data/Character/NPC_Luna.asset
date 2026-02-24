@@ -89,6 +89,7 @@ MonoBehaviour:
   killExpReward: 50
   killGoldReward: 20
   lootTable: {fileID: 0}
+  defeatCGs: []
   startingSkills: []
   defaultMaxLifespan: 80
   lifespanPerLevel: 1

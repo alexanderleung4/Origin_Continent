@@ -88,6 +88,7 @@ GameObject:
   - component: {fileID: 2785545721445285714}
   - component: {fileID: 6938554353028822994}
   - component: {fileID: 2956421993577508725}
+  - component: {fileID: 7272695224906635383}
   m_Layer: 5
   m_Name: Slot_Template
   m_TagString: Untagged
@@ -212,6 +213,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enableClick: 1
   enableHover: 1
+--- !u!114 &7272695224906635383
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3196168789963121146}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c0bd25128685854f8de498cc986e43b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentItem: {fileID: 0}
 --- !u!1 &5345807085100611356
 GameObject:
   m_ObjectHideFlags: 0
@@ -280,7 +294,7 @@ MonoBehaviour:
   m_text: x99
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: a4f8cfcf46360c644ba21873094ec585, type: 2}
-  m_sharedMaterial: {fileID: 8558960928395021586, guid: a4f8cfcf46360c644ba21873094ec585, type: 2}
+  m_sharedMaterial: {fileID: -2983576806877300093, guid: a4f8cfcf46360c644ba21873094ec585, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

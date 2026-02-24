@@ -19,6 +19,9 @@ MonoBehaviour:
   type: 2
   isStackable: 0
   maxStack: 1
+  buyPrice: 100
+  sellPrice: 50
+  isSellable: 1
   healAmount: 0
   manaAmount: 0
   staminaAmount: 0

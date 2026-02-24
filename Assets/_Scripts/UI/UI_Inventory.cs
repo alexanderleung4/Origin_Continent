@@ -77,12 +77,19 @@ public class UI_Inventory : MonoBehaviour
             if (slot.amount > 1) amountText.text = slot.amount.ToString();
             else amountText.text = "";
 
-            // --- 👇 新增: 点击事件 ---
-            // 给 Slot 预制体添加 Button 组件 (如果预制体根节点没有 Button，这里会报错，请确保预制体有 Button 组件)
+            // --- 按钮事件注入 ---
             Button btn = newSlot.GetComponent<Button>();
             if (btn == null) btn = newSlot.AddComponent<Button>(); // 自动添加保险
 
             btn.onClick.AddListener(() => OnSlotClicked(slot));
+
+            // --- 👇 新增: Tooltip 动态数据注入 ---
+            UI_TooltipTrigger tooltipTrigger = newSlot.GetComponent<UI_TooltipTrigger>();
+            // 如果预制体上忘了挂载，系统自动帮您补上，防止报错
+            if (tooltipTrigger == null) tooltipTrigger = newSlot.AddComponent<UI_TooltipTrigger>(); 
+            
+            // 将当前格子的物品数据赋予触发器
+            tooltipTrigger.currentItem = slot.itemData;
         }
     }
 

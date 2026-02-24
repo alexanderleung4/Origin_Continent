@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 999a2b51f8e9f234896df82e959bd8cd, type: 3}
+  m_Name: CG_Lilith_GoblinDefeat
+  m_EditorClassIdentifier: 
+  dialogueID: CG_Lilith_OrcDefeat
+  lines:
+  - speakerName: Lilith
+    content: "\u201C\u5514\u2026\u2026\u8BE5\u6B7B\u2026\u2026\u8FD9\u79CD\u6C61\u79FD\u7684\u529B\u91CF\u2026\u2026\u662F\u9ED1\u6B7B\u5492\u5728\u53CD\u566C\u5417\uFF1F\u201D"
+    expression: Pain
+    backgroundID: 
+    portrait: {fileID: 21300000, guid: 10d8d189dad4e7d448fdc29a753e9690, type: 3}
+    eventCommand: 
+  - speakerName: Goblin
+    content: "\u201C\u5723\u6559\u519B\u7684\u56E2\u957F\u4E5F\u4E0D\u8FC7\u5982\u6B64\u3002\u6840\u6840\u6840\u3002\u201D"
+    expression: 
+    backgroundID: 
+    portrait: {fileID: 21300000, guid: a07ca17e4ff7be547b46d0f779545147, type: 3}
+    eventCommand: 
+  - speakerName: Lilith
+    content: "\u201C\u5C31\u7B97\u8EAB\u4F53\u7834\u788E\u2026\u2026\u6211\u4E5F\u7EDD\u4E0D\u4F1A\u2026\u2026\u5411\u4F60\u4EEC\u8FD9\u79CD\u2026\u2026\u5443\u554A\uFF01\u201D"
+    expression: Angry
+    backgroundID: CG_Lilith_Broken_01
+    portrait: {fileID: 0}
+    eventCommand: 
+  - speakerName: "\u7CFB\u7EDF"
+    content: "\u4F34\u968F\u5267\u70C8\u7684\u9707\u52A8\uFF0C\u8389\u8389\u4E1D\u7684\u91CD\u7532\u54E5\u5E03\u6797\u4EEC\u5F7B\u5E95\u7C89\u788E\uFF09"
+    expression: 
+    backgroundID: CG_Lilith_Broken_02
+    portrait: {fileID: 0}
+    eventCommand: 
+  - speakerName: Goblin
+    content: "\u5144\u5F1F\u4EEC\uFF01\u4E0A\uFF01"
+    expression: 
+    backgroundID: CG_Lilith_Broken_03
+    portrait: {fileID: 0}
+    eventCommand: 
+  - speakerName: Lilith
+    content: "\u201C\u4F4F\u624B\u2026\u2026\u4E0D\u8981\u770B\u2026\u2026\u8FD9\u79CD\u5C48\u8FB1\u2026\u2026\u6211\u5B81\u613F\u2026\u2026\u201D"
+    expression: 
+    backgroundID: CG_Lilith_Broken_04
+    portrait: {fileID: 0}
+    eventCommand: Stamina:-50

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Player_Base
   m_EditorClassIdentifier: 
   characterName: Player
-  characterID: 
+  characterID: Player
   description: "\u7B2C\u4E00\u4E2A\u521B\u9020\u51FA\u6765\u7684\u6D4B\u8BD5\u8005"
   team: 0
   aiProfile: {fileID: 0}
@@ -41,31 +41,22 @@ MonoBehaviour:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 0.000060856342
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
+      time: 0
+      value: 0
+      inSlope: 0.049610697
+      outSlope: 0.049610697
+      tangentMode: 34
       weightedMode: 0
       inWeight: 0
-      outWeight: 0
+      outWeight: 0.33333334
     - serializedVersion: 3
-      time: 3.6460886
-      value: 1.0219678
-      inSlope: 0.010757009
-      outSlope: 0.010757009
-      tangentMode: 0
+      time: 99.847466
+      value: 4.953502
+      inSlope: 0.049610697
+      outSlope: 0.049610697
+      tangentMode: 34
       weightedMode: 0
       inWeight: 0.33333334
-      outWeight: 0.062955126
-    - serializedVersion: 3
-      time: 100.092926
-      value: 9.995937
-      inSlope: 0.06010354
-      outSlope: 0.06010354
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.16613515
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
@@ -98,6 +89,7 @@ MonoBehaviour:
   killExpReward: 50
   killGoldReward: 20
   lootTable: {fileID: 0}
+  defeatCGs: []
   startingSkills:
   - {fileID: 11400000, guid: 33c00d90c9d26cc4a970feb5e9888801, type: 2}
   - {fileID: 11400000, guid: f1f2ce9d04775d8428c1df53c411ea44, type: 2}

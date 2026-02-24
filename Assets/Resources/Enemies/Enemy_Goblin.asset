@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Enemy_Goblin
   m_EditorClassIdentifier: 
   characterName: "\u54E5\u5E03\u6797"
-  characterID: 
+  characterID: Goblin
   description: "\u8FD9\u4E0D\u662F\u6211\u5144\u5F1F\u5417"
   team: 1
   aiProfile: {fileID: 11400000, guid: a2f6e8dc9d2686f409457ddba22942e3, type: 2}
@@ -89,6 +89,7 @@ MonoBehaviour:
   killExpReward: 50
   killGoldReward: 20
   lootTable: {fileID: 11400000, guid: 0e39b81db860f904184c889d72098f10, type: 2}
+  defeatCGs: []
   startingSkills:
   - {fileID: 11400000, guid: f1f2ce9d04775d8428c1df53c411ea44, type: 2}
   - {fileID: 11400000, guid: 18bcf5ee3a8efe947b0f3de8de0c5067, type: 2}

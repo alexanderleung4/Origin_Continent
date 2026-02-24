@@ -202,6 +202,9 @@ public class UI_CharacterSheet : MonoBehaviour
             {
                 btn.image.sprite = defaultSlotSprite; 
                 btn.image.color = (defaultSlotSprite == null) ? Color.clear : Color.white; 
+                // 👇 新增: 清空可能残留的 Tooltip 数据
+                UI_TooltipTrigger tooltip = btn.GetComponent<UI_TooltipTrigger>();
+                if (tooltip != null) tooltip.currentItem = null;
             }
         }
         foreach (var kvp in player.equipment)
@@ -214,6 +217,10 @@ public class UI_CharacterSheet : MonoBehaviour
                 {
                     btn.image.sprite = kvp.Value.icon;
                     btn.image.color = Color.white;
+                    // 👇 新增: 注入真实的装备数据给 Tooltip
+                    UI_TooltipTrigger tooltip = btn.GetComponent<UI_TooltipTrigger>();
+                    if (tooltip == null) tooltip = btn.gameObject.AddComponent<UI_TooltipTrigger>();
+                    tooltip.currentItem = kvp.Value;
                 }
             }
         }
@@ -349,7 +356,17 @@ public class UI_CharacterSheet : MonoBehaviour
     {
         EquipmentSlot slot = GetSlotByIndex(index);
         var player = GameManager.Instance.Player;
-        if (player.equipment.ContainsKey(slot)) { InventoryManager.Instance.UnequipItem(slot); RefreshUI(); }
+        if (player.equipment.ContainsKey(slot)) 
+        { 
+            // 获取角色身上这件真实的装备（带耐久度损耗的）
+            EquipmentData equip = player.equipment[slot];
+            
+            // 劫持路由：不再直接卸下，而是打开详情面板！
+            if (UI_EquipmentDetailPanel.Instance != null)
+            {
+                UI_EquipmentDetailPanel.Instance.OpenPanel(equip, EquipmentPanelSource.CharacterSheet);
+            }
+        }
     }
 
     private void SetBtnActive(Button btn, bool active)

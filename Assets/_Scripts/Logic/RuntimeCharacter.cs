@@ -25,12 +25,16 @@ public class RuntimeCharacter
     public int TalentPoints = 0; // 未分配的天赋点
     // 👇 新增: 钱包
     public int Gold = 0;
+
+    public string lastKillerID = ""; // 记录最后给出致命一击的实体ID
     
     // 记录已分配的天赋点 (StatType -> 投入点数, 1点=1%)
     public Dictionary<StatType, int> allocatedTalents = new Dictionary<StatType, int>();
 
     // --- 装备槽位 ---
     public Dictionary<EquipmentSlot, EquipmentData> equipment = new Dictionary<EquipmentSlot, EquipmentData>();
+    // 运行时耐久度记录表 (按槽位记录当前耐久)
+    public Dictionary<EquipmentSlot, int> equipmentDurability = new Dictionary<EquipmentSlot, int>();
 
     // --- 构造函数 ---
     public RuntimeCharacter(CharacterData sourceData)
@@ -379,9 +383,30 @@ public class RuntimeCharacter
         return null;
     }
 
+    public bool SetDurability(EquipmentSlot slot, int value)
+    {
+        if (equipment != null && equipment.TryGetValue(slot, out EquipmentData equip) && equip != null)
+        {
+            if (equip.maxDurability <= 0) return false;
+
+            int oldValue = equipmentDurability.ContainsKey(slot) ? equipmentDurability[slot] : equip.maxDurability;
+            int newValue = Mathf.Clamp(value, 0, equip.maxDurability);
+            equipmentDurability[slot] = newValue;
+
+            Debug.Log($"[{Name}] 的 {equip.itemName} ({slot}) 耐久度变更为: {newValue}/{equip.maxDurability}");
+
+            if (newValue == 0 && oldValue > 0)
+            {
+                Unequip(slot);
+                return true;
+            }
+        }
+        return false;
+    }
+
     // --- 👇 完整的既有逻辑 (TakeDamage, Mana, Stamina) ---
     
-    public int TakeDamage(int rawDamage)
+    public int TakeDamage(int rawDamage, string sourceID = "")
     {
         // 1. 计算免伤 (Damage Reduction)
         float totalDR = 0f;
@@ -434,9 +459,11 @@ public class RuntimeCharacter
         // 3. 扣除真实血量
         if (damageAfterDR > 0)
         {
+            bool wasAlive = CurrentHP > 0;
             CurrentHP -= damageAfterDR;
             actualHPLost = damageAfterDR;
             if (CurrentHP < 0) CurrentHP = 0;
+            if (CurrentHP <= 0 && wasAlive) lastKillerID = sourceID ?? "";
         }
 
         // 4. UI 与日志刷新

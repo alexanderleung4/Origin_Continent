@@ -17,10 +17,12 @@ MonoBehaviour:
   - speakerName: "\u88AB\u8BC5\u5492\u7684\u5DE8\u9B3C\xB7\u788E\u9AA8\u8005"
     content: "\u4EBA\u7C7B....\u4F60\u4E0D\u8BE5\u6765\u8FD9\u91CC...."
     expression: 
+    backgroundID: 
     portrait: {fileID: 21300000, guid: cd397301464d7f445ab70a40c9825c40, type: 3}
     eventCommand: 
   - speakerName: "\u88AB\u8BC5\u5492\u7684\u5DE8\u9B3C\xB7\u788E\u9AA8\u8005"
     content: 
     expression: 
+    backgroundID: 
     portrait: {fileID: 21300000, guid: cd397301464d7f445ab70a40c9825c40, type: 3}
     eventCommand: Stage:Stage_Forest_Deep
