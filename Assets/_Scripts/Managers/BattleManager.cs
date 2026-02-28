@@ -685,7 +685,7 @@ public class BattleManager : MonoBehaviour
         }
 
         bool triggerCurse = skill.damageType == DamageType.Magical;
-        if (skill.damageType == DamageType.Magical) attacker.runtime.ConsumeMana(skill.mpCost, triggerCurse);
+        if (skill.damageType == DamageType.Magical) attacker.runtime.ConsumeMana(skill.mpCost);
         else attacker.runtime.ConsumeStamina(skill.staminaCost);
 
         UpdateStatsUI();
@@ -741,7 +741,7 @@ public class BattleManager : MonoBehaviour
     // ========================================================================
     // 6. UI 更新 & 结算 (完美保留原样)
     // ========================================================================
-    private void UpdateStatsUI()
+    public void UpdateStatsUI()
     {
         if (ui == null) return;
         foreach (var entity in allEntities)
@@ -1070,6 +1070,18 @@ public class BattleManager : MonoBehaviour
         float goldLossPercent = (diff == GameDifficulty.Story) ? 0.2f : 0.5f;
         int lostGold = Mathf.RoundToInt(player.Gold * goldLossPercent);
         player.Gold -= lostGold;
+
+        // 👇 新增：起源模式专属惩罚 —— 黑死咒加深！
+        if (diff == GameDifficulty.Origin)
+        {
+            TraitData curseData = Resources.Load<TraitData>("Traits/Trait_BlackCurse");
+            if (curseData != null)
+            {
+                player.AddTrait(curseData, 1);
+                if (UI_SystemToast.Instance != null) 
+                    UI_SystemToast.Instance.Show("Curse", "死亡的阴影掠过... 黑死咒加深了！", 0, null);
+            }
+        }
         
         // （防具耐久度清零与 HP=1 已经在之前的 ProcessCGAndEnd 里执行过了，保持狼狈状态）
 
@@ -1133,4 +1145,6 @@ public class BattleManager : MonoBehaviour
         if (ui != null && ui.battleLogText != null) ui.battleLogText.text = msg;
         Debug.Log($"[Battle] {msg}");
     }
+
+
 }

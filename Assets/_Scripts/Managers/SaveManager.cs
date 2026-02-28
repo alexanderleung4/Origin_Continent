@@ -109,6 +109,11 @@ public class SaveManager : MonoBehaviour
         data.player.stamina = player.CurrentStamina;
         data.player.gold = player.Gold;
         data.player.talentPoints = player.TalentPoints;
+        data.player.traits = new List<TraitSaveEntry>();
+        foreach(var t in player.traits)
+        {
+            if (t.data != null) data.player.traits.Add(new TraitSaveEntry { traitID = t.data.traitID, level = t.level });
+        }
 
         data.player.allocatedTalents = new List<TalentEntry>();
         foreach(var kvp in player.allocatedTalents)
@@ -172,6 +177,19 @@ public class SaveManager : MonoBehaviour
         player.CurrentStamina = data.player.stamina;
         player.Gold = data.player.gold;
         player.TalentPoints = data.player.talentPoints;
+        player.traits.Clear();
+        if (data.player.traits != null)
+        {
+            foreach(var tSave in data.player.traits)
+            {
+                // 注意：这里假设您把所有的 TraitData 预制体存放在 Resources/Traits/ 文件夹下！
+                TraitData loadedTrait = Resources.Load<TraitData>($"Traits/{tSave.traitID}");
+                if (loadedTrait != null)
+                {
+                    player.traits.Add(new RuntimeCharacter.ActiveTrait { data = loadedTrait, level = tSave.level });
+                }
+            }
+        }
 
         player.allocatedTalents.Clear();
         foreach(var entry in data.player.allocatedTalents) player.allocatedTalents.Add(entry.statType, entry.points);

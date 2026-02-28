@@ -126,9 +126,4 @@ public class CharacterData : ScriptableObject
     [Header("💪 Skills (技能)")]
     public List<SkillData> startingSkills; // ✅ [核心] 初始技能
 
-    [Header("⏳ Survival (生存/寿命系统 - 暂未启用)")]
-    // 🗓️ [未来] 如果要做“老死”机制就留着，不做可以删掉
-    public int defaultMaxLifespan = 80; 
-    public int lifespanPerLevel = 1;
-    public bool isUndead; 
 }

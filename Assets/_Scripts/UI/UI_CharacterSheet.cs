@@ -41,7 +41,12 @@ public class UI_CharacterSheet : MonoBehaviour
     public List<Button> equipmentSlots; 
     public Sprite defaultSlotSprite; 
 
-    // --- 👇 新增: 技能页内容 ---
+    // --- 被动特质区域 ---
+    [Header("Traits (被动特质)")]
+    public Transform traitListContainer; // 挂载特质徽章的 GridLayoutGroup 父节点
+    public GameObject traitSlotPrefab;   // 刚写好的 UI_TraitSlot 预制体
+
+    // --- 技能页内容 ---
     [Header("Page: Skills")]
     public Transform skillListContainer; // 技能列表的 Content
     public GameObject skillSlotPrefab;   // 拖入挂了 UI_SkillSlot 的预制体
@@ -224,6 +229,25 @@ public class UI_CharacterSheet : MonoBehaviour
                 }
             }
         }
+        // --- 刷新被动特质列表 ---
+        if (traitListContainer != null && traitSlotPrefab != null)
+        {
+            // 清空旧数据
+            foreach (Transform child in traitListContainer) Destroy(child.gameObject);
+
+            // 生成新徽章
+            foreach (var trait in player.traits)
+            {
+                if (trait.data == null) continue;
+                
+                GameObject go = Instantiate(traitSlotPrefab, traitListContainer);
+                UI_TraitSlot slot = go.GetComponent<UI_TraitSlot>();
+                if (slot != null)
+                {
+                    slot.Setup(trait, OnTraitSelected);
+                }
+            }
+        }
     }
 
     // --- 👇 Page 2: 技能刷新 (新增) ---
@@ -316,6 +340,40 @@ public class UI_CharacterSheet : MonoBehaviour
                     powerStr += "\n";
                 }
                 detailPower.text = powerStr;
+            }
+        }
+    }
+    // --- 👇 新增: 点击特质徽章显示详情 ---
+    private void OnTraitSelected(RuntimeCharacter.ActiveTrait trait)
+    {
+        // 我们直接“借用”技能详情面板来显示被动特质！这样不用再新建一个 UI 面板
+        if (skillDetailPanel != null)
+        {
+            skillDetailPanel.SetActive(true);
+            
+            // 显示特质名和等级
+            if (detailName) detailName.text = $"{trait.data.traitName} (Lv.{trait.level})";
+            
+            // 拼接描述信息
+            string desc = trait.data.baseDescription;
+            if (!trait.data.isPermanent && trait.remainingDays > 0)
+            {
+                desc += $"\n<color=#FFAA00>剩余时间: {trait.remainingDays} 天</color>";
+            }
+            if (detailDesc) detailDesc.text = desc;
+
+            // 读取当前层级的专属效果描述
+            if (detailPower != null)
+            {
+                if (trait.level > 0 && trait.level <= trait.data.levels.Count)
+                {
+                    string effectText = trait.data.levels[trait.level - 1].levelDescription;
+                    detailPower.text = string.IsNullOrEmpty(effectText) ? "被动效果已生效。" : effectText;
+                }
+                else
+                {
+                    detailPower.text = "";
+                }
             }
         }
     }

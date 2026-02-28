@@ -13,11 +13,34 @@ public class GameManager : MonoBehaviour
     private void OnEnable()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
+        // 👇 新增：绑定时间管理器的跨天事件
+        if (TimeManager.Instance != null)
+        {
+            TimeManager.Instance.OnDayChanged.AddListener(OnDayPassed);
+        }
     }
 
     private void OnDisable()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
+        // 👇 新增：解绑事件防止内存泄漏
+        if (TimeManager.Instance != null)
+        {
+            TimeManager.Instance.OnDayChanged.RemoveListener(OnDayPassed);
+        }
+    }
+
+    private void OnDayPassed(int newDay)
+    {
+        Debug.Log($"[GameManager] 世界迎来了第 {newDay} 天，开始全局状态结算...");
+        
+        // 通知主角刷新所有带有期限的特质（比如持续 3 天的流血/骨折）
+        if (Player != null)
+        {
+            Player.TickTraits(1); 
+        }
+        
+        // 提示：如果您未来做了同伴系统，这里可以直接用 foreach 遍历所有同伴调用 TickTraits
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -27,6 +50,10 @@ public class GameManager : MonoBehaviour
 
         // 👇 改动：不要直接刷新，而是启动一个协程“延迟刷新”
         StartCoroutine(DelayedUIRefresh());
+        if (TimeManager.Instance != null)
+        {
+            TimeManager.Instance.OnDayChanged.AddListener(OnDayPassed);
+        }
     }
 
     // 新增：延迟刷新协程
@@ -331,5 +358,6 @@ public class GameManager : MonoBehaviour
             playerInstance.TakeDamage(10);
             if(UIManager.Instance != null) UIManager.Instance.RefreshPlayerStatus();
         }
+        GameManager.Instance.Player.AddTrait(Resources.Load<TraitData>("Traits/Trait_BlackCurse"), 1);
     }
 }

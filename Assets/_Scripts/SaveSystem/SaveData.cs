@@ -52,6 +52,14 @@ public struct PlayerSaveData
     
     // 对应 RuntimeCharacter.equipment
     public List<EquipmentEntry> equipment; 
+
+    public List<TraitSaveEntry> traits;
+}
+[System.Serializable]
+public struct TraitSaveEntry
+{
+    public string traitID;
+    public int level;
 }
 
 [System.Serializable]

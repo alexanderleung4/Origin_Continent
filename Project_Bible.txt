@@ -11,6 +11,7 @@
 
 ### 📁 Logic
 * RuntimeCharacter
+* GameEnums (包含 TeamType, GameDifficulty 等全局通用枚举)
 
 ### 📁 Managers (全局单例与核心控制)
 * AudioManager, BattleManager, DialogueManager, GameManager, InventoryManager
@@ -31,6 +32,8 @@
 * UI_SkillSlot, UI_TimelineIcon, UI_TitleScreen, UIManager, UISound
 * UI_SystemToast (负责全局悬浮播报)
 * UI_EquipmentDetailPanel (装备详情中枢), UI_Tooltip, UI_TooltipTrigger (悬浮信息末梢)
+* UI_DifficultyToggle (难度全局切换挂件)
+* Interactable_RestPoint (休眠点恢复与时间推进)
 
 ### 📁 Utils (底层工具)
 * AutoDestroy, CSVLoader。
@@ -63,6 +66,15 @@
 * **底层拦截原则:** 播报触发必须深深埋在最底层的数据变动处 (如 `InventoryManager.AddItem` 或 `GainExp` 结算循环后)，严禁在业务逻辑层 (如开宝箱的瞬间) 重复写弹窗代码。
 * **静默阀门 (Silent Valve):** 为防止 SaveManager 读档时引发弹窗雪崩，核心数据写入方法必须提供 `bool isSilent = false` 参数以供静默调用。
 * **智能聚合:** 调用 `UI_SystemToast.Instance.Show()` 时，必须传入准确的 `mergeID` (如 "Gold", item.name)，以实现同类信息的数值相加与屏幕悬停时间重置。
+
+### ⚖️ 全局难度与战败路由 (Difficulty & Defeat Protocol)
+* 乘区隔离: 绝对禁止直接修改 CharacterData 和 ItemData 的静态数值。所有难度膨胀必须在 RuntimeCharacter.GetStat() 的最终计算阶段，以及 GameManager.GetDynamicBuyPrice() 中动态乘以系数。
+* 深渊删档 (Permadeath): 战败管线 (CloseBattleDelay) 中，若检测到 Abyss 难度，必须调用 SaveManager.DeleteSave(currentSaveID) 销毁当前进度并踢回 Scene_Title，实现极致生存压迫。
+* 全局记忆: 难度设置 (currentDifficulty) 不随单个 SaveData 绑定，而是通过 PlayerPrefs 写入本地设备，确保跨存档的偏好一致性。
+
+### 🏠 家园生态与时间流逝 (Home Ecosystem)
+* 唯一归宿: GameManager.currentHomeLocation 必须挂载勾选了 `isHomeLocation = true` 的 LocationData。战败后强制调用 GoToLocation 遣返回城。
+* 休眠置换: 场景中的床铺/篝火必须挂载 `Interactable_RestPoint`。休息的本质是“状态重置 + TimeManager.AdvanceTime(时间)”，必须包裹在 SceneFader 的黑屏转场中以掩盖底层数据跳变。
 
 ====================================================================
 ## 3. 极易混淆变量警示录 (Variable Blacklist/Whitelist)

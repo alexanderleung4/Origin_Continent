@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd9f3aa0d2b29474da8289f7f858720e, type: 3}
+  m_Name: Trait_BlackCurse
+  m_EditorClassIdentifier: 
+  traitID: Trait_BlackCurse
+  traitName: "\u9ED1\u6B7B\u5492"
+  type: 1
+  icon: {fileID: 0}
+  baseDescription: "\u6765\u81EA\u8D77\u6E90\u5927\u9646\u7684\u8BC5\u5492\u3002\u53E0\u6EE1\u5C42\u6570\u5373\u4E3A\u6B7B\u4EA1\u3002\u6BCF\u6218\u8D25\u4E00\u6B21\u53E0\u4E00\u5C42\u3002"
+  isPermanent: 1
+  durationDays: -1
+  isLevelable: 1
+  maxLevel: 3
+  levels:
+  - levelDescription: "\u51CF\u5C1110%\u6700\u5927\u8840\u91CF"
+    modifiers:
+    - statType: 0
+      type: 1
+      value: -10
+    specialEffects: []
+  - levelDescription: "\u51CF\u5C1130%\u6700\u5927\u8840\u91CF"
+    modifiers:
+    - statType: 0
+      type: 1
+      value: -30
+    specialEffects: []
+  - levelDescription: "\u6B7B\u4EA1"
+    modifiers:
+    - statType: 0
+      type: 1
+      value: -30
+    specialEffects:
+    - {fileID: 11400000, guid: c1570f57060a04a4f84e9103978cdf83, type: 2}

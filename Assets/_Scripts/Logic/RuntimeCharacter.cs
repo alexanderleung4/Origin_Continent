@@ -50,7 +50,6 @@ public class RuntimeCharacter
         CurrentHP = MaxHP;
         CurrentMP = MaxMP;
         CurrentStamina = MaxStamina;
-        CurrentCurse = 0;
         turnCount = 0;
         
     }
@@ -111,10 +110,28 @@ public class RuntimeCharacter
                 }
             }
         }
+        // 👇 新增：遍历提取特质提供的数值修饰
+        float traitFlat = 0;
+        float traitPercent = 0;
+        foreach (var trait in traits)
+        {
+            if (trait.data != null && trait.level > 0 && trait.level <= trait.data.levels.Count)
+            {
+                TraitLevel levelData = trait.data.levels[trait.level - 1];
+                foreach (var mod in levelData.modifiers)
+                {
+                    if (mod.statType == type)
+                    {
+                        if (mod.type == ModifierType.Flat) traitFlat += mod.value;
+                        else if (mod.type == ModifierType.Percent) traitPercent += mod.value; // 例如黑死咒配置了 -10%，这里就会加上 -10
+                    }
+                }
+            }
+        }
 
         // 4. 基础计算: (白值 + 装备固定) * (1 + 装备%)
-        float step1 = baseValue + equipFlat;
-        float step2 = step1 * (1f + (equipPercent / 100f));
+        float step1 = baseValue + equipFlat + traitFlat;
+        float step2 = step1 * (1f + ((equipPercent + traitPercent) / 100f));
 
         // 5. 👇 修改核心: 天赋改为【固定值加算】 (除了暴击)
         // 1 天赋点 = +1 属性点
@@ -172,6 +189,14 @@ public class RuntimeCharacter
     }
 
     public List<ActiveBuff> activeBuffs = new List<ActiveBuff>();
+    // --- 👇 新增: 被动特质系统 (Traits) ---
+    public class ActiveTrait
+    {
+        public TraitData data;
+        public int level;
+        public int remainingDays; // 👇 新增：剩余天数 (-1代表永久)
+    }
+    public List<ActiveTrait> traits = new List<ActiveTrait>();
     public int CurrentShield = 0; // 当前护盾总量
 
     // 公开属性访问器
@@ -496,17 +521,11 @@ public class RuntimeCharacter
         return actualHPLost;
     }
 
-    public void ConsumeMana(int amount, bool triggerCurse)
+    public void ConsumeMana(int amount)
     {
         if (CurrentMP >= amount)
         {
             CurrentMP -= amount;
-            if (triggerCurse)
-            {
-                CurrentCurse++;
-                // ✅ 完整的日志逻辑已保留
-                Debug.Log($"黑死咒加深... 当前层数: {CurrentCurse}");
-            }
         }
         if (UIManager.Instance != null) UIManager.Instance.RefreshPlayerStatus();
     }
@@ -544,5 +563,87 @@ public class RuntimeCharacter
     public void ResetAVAfterTurn()
     {
         CurrentAV = BaseAV;
+    }
+
+    // --- 👇 新增: 获得或升级特质 ---
+    public void AddTrait(TraitData newTrait, int levelsToAdd = 1)
+    {
+        if (newTrait == null) return;
+        
+        ActiveTrait existing = traits.Find(t => t.data == newTrait);
+        if (existing != null)
+        {
+            if (existing.data.isLevelable && existing.level < existing.data.maxLevel)
+            {
+                existing.level += levelsToAdd;
+                if (existing.level > existing.data.maxLevel) existing.level = existing.data.maxLevel;
+                Debug.Log($"[Trait] {Name} 的特质 [{newTrait.traitName}] 恶化/升级到了 Lv.{existing.level}!");
+                
+                ExecuteTraitPlugins(existing);
+            }
+        }
+        else
+        {
+            // 👇 补上 remainingDays 的赋值，-1 代表永久，否则读取配置表的天数
+            ActiveTrait t = new ActiveTrait { 
+                data = newTrait, 
+                level = Mathf.Clamp(levelsToAdd, 1, newTrait.maxLevel),
+                remainingDays = newTrait.isPermanent ? -1 : newTrait.durationDays 
+            };
+            traits.Add(t);
+            Debug.Log($"[Trait] {Name} 获得了新特质 [{newTrait.traitName}] Lv.{t.level}!");
+            
+            ExecuteTraitPlugins(t);
+        }
+        
+        // 属性上限可能发生变化，强制矫正当前血量
+        if (CurrentHP > MaxHP) CurrentHP = MaxHP;
+        if (UIManager.Instance != null) UIManager.Instance.RefreshPlayerStatus();
+        if (BattleManager.Instance != null) BattleManager.Instance.UpdateStatsUI();
+    }
+    // --- 👇 新增: 跨天结算特质期限 ---
+    public void TickTraits(int daysPassed = 1)
+    {
+        bool hasChanges = false;
+        
+        // 倒序遍历，方便安全删除过期特质
+        for (int i = traits.Count - 1; i >= 0; i--)
+        {
+            ActiveTrait t = traits[i];
+            
+            // 如果不是永久特质，且剩余天数 > 0
+            if (t.data != null && !t.data.isPermanent && t.remainingDays > 0)
+            {
+                t.remainingDays -= daysPassed;
+                
+                if (t.remainingDays <= 0)
+                {
+                    Debug.Log($"[Trait] 经过时间的流逝，特质 [{t.data.traitName}] 已消散！");
+                    traits.RemoveAt(i);
+                    hasChanges = true;
+                }
+            }
+        }
+
+        // 如果有特质过期消失了，属性上限必定发生变化，需要全盘刷新 UI
+        if (hasChanges)
+        {
+            if (CurrentHP > MaxHP) CurrentHP = MaxHP;
+            if (UIManager.Instance != null) UIManager.Instance.RefreshPlayerStatus();
+            if (BattleManager.Instance != null) BattleManager.Instance.UpdateStatsUI();
+        }
+    }
+
+    // 处理特殊的机制标签 (例如黑死咒满级暴毙)
+    private void ExecuteTraitPlugins(ActiveTrait trait)
+    {
+        if (trait.data == null || trait.level <= 0 || trait.level > trait.data.levels.Count) return;
+        TraitLevel currentLevelData = trait.data.levels[trait.level - 1];
+        
+        // 遍历并执行所有挂载在这个层级的“特质插件”！
+        foreach (var plugin in currentLevelData.specialEffects)
+        {
+            if (plugin != null) plugin.OnTraitAdded(this, trait.level);
+        }
     }
 }
