@@ -108,8 +108,9 @@ public class ShopManager : MonoBehaviour
             return false;
         }
 
-        // 2. 检查金币
-        int totalCost = item.buyPrice * quantity;
+        // 2. 检查金币 (👇 接入动态难度物价)
+        int dynamicPrice = GameManager.Instance.GetDynamicBuyPrice(item);
+        int totalCost = dynamicPrice * quantity;
         if (player.Gold < totalCost)
         {
             Debug.Log("[Shop] 金币不足！");

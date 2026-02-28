@@ -68,7 +68,7 @@ MonoBehaviour:
   m_text: NPC Name
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: a4f8cfcf46360c644ba21873094ec585, type: 2}
-  m_sharedMaterial: {fileID: 8558960928395021586, guid: a4f8cfcf46360c644ba21873094ec585, type: 2}
+  m_sharedMaterial: {fileID: -2983576806877300093, guid: a4f8cfcf46360c644ba21873094ec585, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -147,6 +147,7 @@ GameObject:
   - component: {fileID: 3246518743575411096}
   - component: {fileID: 8866511061593606035}
   - component: {fileID: 4714995034347277426}
+  - component: {fileID: 6344162867578677239}
   m_Layer: 5
   m_Name: Btn_NPC_Template
   m_TagString: Untagged
@@ -270,3 +271,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enableClick: 1
   enableHover: 1
+--- !u!114 &6344162867578677239
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6371051620256081674}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63b449a2dc39c07478af930f5383ff60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  npcData: {fileID: 0}
+  bodyImage: {fileID: 3246518743575411096}
+  nameText: {fileID: 7747780493631654679}

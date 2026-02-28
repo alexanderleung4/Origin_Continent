@@ -154,8 +154,9 @@ public void RefreshList()
         // --- 逻辑分支 ---
         if (isBuy)
         {
-            // 买入模式：显示价格
-            price.text = $"${item.buyPrice}";
+            // 买入模式：显示经过难度计算的动态价格
+            int dynamicPrice = GameManager.Instance.GetDynamicBuyPrice(item);
+            price.text = $"${dynamicPrice}";
             
             // 检查库存是否耗尽
             int stock = ShopManager.Instance.GetStock(currentShop, item);
@@ -204,9 +205,10 @@ public void RefreshList()
             int stock = ShopManager.Instance.GetStock(currentShop, item);
             string stockStr = (stock == -1) ? "无限" : stock.ToString();
             
-            detailPrice.text = $"价格: {item.buyPrice}";
+            int dynamicPrice = GameManager.Instance.GetDynamicBuyPrice(item);
+            detailPrice.text = $"价格: {dynamicPrice}";
             
-            // 👇 新增: 显示库存
+            // 显示库存
             if (detailStock) detailStock.text = $"库存: {stockStr}";
 
             // 按钮状态
@@ -215,7 +217,7 @@ public void RefreshList()
                 actionButton.interactable = false;
                 actionBtnText.text = "已售罄";
             }
-            else if (GameManager.Instance.Player.Gold < item.buyPrice)
+            else if (GameManager.Instance.Player.Gold < dynamicPrice) // 👇 修改判断
             {
                 actionButton.interactable = false;
                 actionBtnText.text = "金币不足";

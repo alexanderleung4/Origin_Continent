@@ -768,6 +768,7 @@ public class BattleManager : MonoBehaviour
                 // 彻底隐藏活人的 UI
                 if (u.hpSlider != null) u.hpSlider.gameObject.SetActive(false);
                 if (u.mpSlider != null) u.mpSlider.gameObject.SetActive(false);
+                if (u.staminaSlider != null) u.staminaSlider.gameObject.SetActive(false); 
                 if (u.shieldSlider != null) u.shieldSlider.gameObject.SetActive(false);
                 if (u.nameText != null) u.nameText.gameObject.SetActive(false); 
                 if (u.buffContainer != null) u.buffContainer.gameObject.SetActive(false); 
@@ -783,15 +784,31 @@ public class BattleManager : MonoBehaviour
             if (u.bodyImage != null) u.bodyImage.color = Color.white;
             if (u.hpSlider != null) u.hpSlider.gameObject.SetActive(true);
             if (u.mpSlider != null) u.mpSlider.gameObject.SetActive(true);
+            if (u.staminaSlider != null) u.staminaSlider.gameObject.SetActive(true);
             if (u.nameText != null) u.nameText.gameObject.SetActive(true);
             if (u.buffContainer != null) u.buffContainer.gameObject.SetActive(true);
             Button activeBtn = u.GetComponent<Button>();
             if (activeBtn != null) activeBtn.interactable = true;
 
+
             // 原本的数值刷新逻辑保持不变
             RuntimeCharacter r = entity.runtime;
+            // HP
             if (u.hpSlider != null) u.hpSlider.value = (float)r.CurrentHP / r.MaxHP;
+            if (u.hpText != null) u.hpText.text = $"{r.CurrentHP}/{r.MaxHP}"; 
+
+            // MP
             if (u.mpSlider != null) u.mpSlider.value = (float)r.CurrentMP / r.MaxMP;
+            if (u.mpText != null) u.mpText.text = $"{r.CurrentMP}/{r.MaxMP}"; 
+
+            // Stamina
+            if (u.staminaSlider != null) 
+            {
+                float maxStamina = r.MaxStamina > 0 ? r.MaxStamina : 1;
+                u.staminaSlider.value = (float)r.CurrentStamina / maxStamina;
+            }
+            if (u.staminaText != null) u.staminaText.text = $"{r.CurrentStamina}/{r.MaxStamina}";
+            
             if (u.shieldSlider != null)
             {
                 u.shieldSlider.maxValue = r.MaxHP;
@@ -985,28 +1002,91 @@ public class BattleManager : MonoBehaviour
     private IEnumerator CloseBattleDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
+        
         if (SceneFader.Instance != null)
         {
+            // 屏幕开始变黑，在纯黑的瞬间执行委托内的代码
             SceneFader.Instance.FadeAndExecute(() => 
             {
                 if (BattleHUDRoot != null) BattleHUDRoot.SetActive(false);
                 if (MainHUDRoot != null) MainHUDRoot.SetActive(true);
-                if (GameManager.Instance != null) 
+
+                // 👇 核心劫持：判断是胜利还是战败
+                if (state == BattleState.Lost)
                 {
-                    GameManager.Instance.ChangeState(GameState.Exploration);
-                    if (GameManager.Instance.currentLocation != null && GameManager.Instance.currentLocation.backgroundMusic != null)
-                        AudioManager.Instance.PlayMusic(GameManager.Instance.currentLocation.backgroundMusic);
+                    ExecuteDefeatPenaltyAndTeleport();
+                }
+                else
+                {
+                    // 胜利或逃跑的正常回归逻辑
+                    if (GameManager.Instance != null) 
+                    {
+                        GameManager.Instance.ChangeState(GameState.Exploration);
+                        if (GameManager.Instance.currentLocation != null && GameManager.Instance.currentLocation.backgroundMusic != null)
+                            AudioManager.Instance.PlayMusic(GameManager.Instance.currentLocation.backgroundMusic);
+                    }
                 }
             });
         }
         else
         {
+            // 兜底逻辑 (没有黑屏过渡时的硬切)
             if (BattleHUDRoot != null) BattleHUDRoot.SetActive(false);
             if (MainHUDRoot != null) MainHUDRoot.SetActive(true);
-            if (GameManager.Instance != null) GameManager.Instance.ChangeState(GameState.Exploration);
+            
+            if (state == BattleState.Lost) ExecuteDefeatPenaltyAndTeleport();
+            else if (GameManager.Instance != null) GameManager.Instance.ChangeState(GameState.Exploration);
         }
     }
 
+    // ==========================================
+    // 💀 死神之手：战败惩罚与传送枢纽
+    // ==========================================
+    private void ExecuteDefeatPenaltyAndTeleport()
+    {
+        RuntimeCharacter player = GameManager.Instance.Player;
+        if (player == null) return;
+
+        // 获取当前难度 (读取您刚配置好的 currentDifficulty)
+        GameDifficulty diff = GameManager.Instance != null ? GameManager.Instance.currentDifficulty : GameDifficulty.Origin;
+
+        // 1. 深渊模式：真实死亡 (Permadeath)
+        if (diff == GameDifficulty.Abyss)
+        {
+            LogBattle("【深渊模式】全军覆没，存档已粉碎。");
+            
+            // 精准删除当前记录的那个存档！
+            if (SaveManager.Instance != null) 
+            {
+                SaveManager.Instance.DeleteSave(SaveManager.Instance.currentSaveID);
+            }
+            
+            // 物理踢回主菜单
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Scene_Title");
+            return;
+        }
+
+        // 2. 宽容/标准模式：扣除金币惩罚
+        float goldLossPercent = (diff == GameDifficulty.Story) ? 0.2f : 0.5f;
+        int lostGold = Mathf.RoundToInt(player.Gold * goldLossPercent);
+        player.Gold -= lostGold;
+        
+        // （防具耐久度清零与 HP=1 已经在之前的 ProcessCGAndEnd 里执行过了，保持狼狈状态）
+
+        // 播报惩罚
+        if (UI_SystemToast.Instance != null)
+        {
+            UI_SystemToast.Instance.Show("DefeatPenalty", $"你被击倒了... 丢失了 {lostGold} 金币。", 0, null);
+        }
+        LogBattle($"战败惩罚结算完毕，剩余金币: {player.Gold}");
+
+        // 3. 传送回“家”
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.ChangeState(GameState.Exploration);
+            GameManager.Instance.TeleportToHome();
+        }
+    }
     public bool TryUseItem(ItemData item)
     {
         if (state != BattleState.PlayerMenu) { LogBattle("现在不能使用物品！"); return false; }

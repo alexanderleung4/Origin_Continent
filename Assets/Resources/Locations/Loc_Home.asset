@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   locationID: Loc_Home
   locationName: "\u6211\u7684\u5BB6"
+  isHomeLocation: 1
   description: "\u6211\u7684\u5BB6"
+  mapPrefab: {fileID: 2479038248139268055, guid: 9573b2626ca349c498553adce95e8aec, type: 3}
   backgroundImage: {fileID: 21300000, guid: 11e0d78f68e177a438c11010b03516cf, type: 3}
   backgroundMusic: {fileID: 8300000, guid: 308dea88f8cfa7842aa7019d2af3304e, type: 3}
   connectedLocations:

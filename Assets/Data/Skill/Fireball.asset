@@ -28,7 +28,7 @@ MonoBehaviour:
     effectTarget: 0
     baseValue: 10
     scalingStat: 6
-    scalingMultiplier: 1
+    scalingMultiplier: 0.8
     hitCount: 1
     lifestealPercent: 0
     buffToApply: {fileID: 0}

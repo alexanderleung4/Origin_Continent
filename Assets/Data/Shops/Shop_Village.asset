@@ -20,9 +20,17 @@ MonoBehaviour:
     currentStock: 0
   - item: {fileID: 11400000, guid: 1023b848fc240b24baaa2cea6a1fb7e8, type: 2}
     maxStock: 1
-    refreshType: 1
+    refreshType: 0
     currentStock: 0
   - item: {fileID: 11400000, guid: d3c4bc1ecc2417840a00cdd0746311c0, type: 2}
     maxStock: 1
-    refreshType: 1
+    refreshType: 0
+    currentStock: 0
+  - item: {fileID: 11400000, guid: 106fe8fbb5654ae49a2a3352040a1ebe, type: 2}
+    maxStock: 1
+    refreshType: 0
+    currentStock: 0
+  - item: {fileID: 11400000, guid: ba3a8ec8e7deea04bb4fc38c541f9484, type: 2}
+    maxStock: 1
+    refreshType: 0
     currentStock: 0

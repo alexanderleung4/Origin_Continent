@@ -16,6 +16,8 @@ public class SaveManager : MonoBehaviour
     // --- 信箱 (Messenger) ---
     // -2: New Game, -1: Auto Save, 0+: Manual Save, -999: None
     public static int AutoLoadSlot = -999; 
+    // 新增：记录当前正在运行的存档槽位 (防遗忘)
+    public int currentSaveID = -1;
 
     private void Awake()
     {
@@ -91,6 +93,7 @@ public class SaveManager : MonoBehaviour
 
     public void SaveGame(int saveID)
     {
+        currentSaveID = saveID; // 👇 新增：存哪个档，当前进程就绑定哪个档
         SaveData data = new SaveData();
         
         // 1. Header
@@ -154,6 +157,7 @@ public class SaveManager : MonoBehaviour
 
     public void LoadGame(int saveID)
     {
+        currentSaveID = saveID; // 👇 新增：记住当前读的是哪个档
         string path = GetPath(saveID);
         if (!File.Exists(path)) { Debug.LogWarning($"[Load] 文件不存在: {path}"); return; }
 

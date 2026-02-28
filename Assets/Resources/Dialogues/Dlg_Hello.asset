@@ -16,5 +16,7 @@ MonoBehaviour:
   lines:
   - speakerName: "\u5546\u4EBA"
     content: "\u4F60\u597D"
+    expression: 
+    backgroundID: 
     portrait: {fileID: 21300000, guid: c0a255036e84f264dafd30bbae54d71e, type: 3}
     eventCommand: 

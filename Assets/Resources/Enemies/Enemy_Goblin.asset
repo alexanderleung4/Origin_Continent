@@ -23,7 +23,7 @@ MonoBehaviour:
   bodySprite_Dead: {fileID: 21300000, guid: 8297ac54e1c102943a22c23456738b55, type: 3}
   bodySprite_HalfBroken: {fileID: 0}
   bodySprite_Broken: {fileID: 0}
-  visualScale: 1
+  visualScale: 0.85
   linkedShop: {fileID: 0}
   defaultAffinity: 0
   defaultDialogue: {fileID: 0}

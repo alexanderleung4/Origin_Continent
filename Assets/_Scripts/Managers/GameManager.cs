@@ -83,6 +83,8 @@ public class GameManager : MonoBehaviour
     {
         UpdateDebugStats(); // 每帧刷新 Debug 面板 (仅编辑器用)
     }
+    //游戏难度设定
+    public GameDifficulty currentDifficulty = GameDifficulty.Origin;
 
     // ========================================================================
     // 2. 玩家数据 (Player Data)
@@ -99,6 +101,8 @@ public class GameManager : MonoBehaviour
     [Header("World Settings")]
     public LocationData startingLocation; // 初始地点
     public LocationData currentLocation;  // 当前地点
+
+    public LocationData currentHomeLocation; // 当前的家园坐标（方便以后做换家系统）
 
     // ========================================================================
     // 4. 记忆系统 (Memory System)
@@ -132,6 +136,13 @@ public class GameManager : MonoBehaviour
     
     private void InitializeGame()
     {
+        // ==========================================
+        // 👇 新增：游戏启动时，优先读取本地硬盘的全局难度设定
+        // ==========================================
+        // (int)GameDifficulty.Origin 的值通常是 1
+        int savedDiff = PlayerPrefs.GetInt("GlobalDifficulty", (int)GameDifficulty.Origin);
+        currentDifficulty = (GameDifficulty)savedDiff;
+        Debug.Log($"[System] 全局难度已同步为: {currentDifficulty}");
         // A. 初始化主角
         if (playerTemplate != null)
         {
@@ -269,6 +280,40 @@ public class GameManager : MonoBehaviour
             _spd = playerInstance.Speed;
             _gold = playerInstance.Gold;
         }
+    }
+
+    public void TeleportToHome()
+    {
+        if (currentHomeLocation != null)
+        {
+            Debug.Log("【死神传送】正在将玩家遣返回家...");
+            // Using existing location loading method
+            GoToLocation(currentHomeLocation);
+        }
+        else     {
+            Debug.LogError("致命错误：未配置 currentHomeLocation！玩家成了孤魂野鬼！");
+        }
+    }
+
+    // ========================================================================
+    // 7. 经济系统管线 (Economy Pipeline)
+    // ========================================================================
+    /// <summary>
+    /// 获取经过难度乘区计算后的物品真实买入价格
+    /// </summary>
+    public int GetDynamicBuyPrice(ItemData item)
+    {
+        if (item == null) return 0;
+        
+        float priceMultiplier = 1.0f;
+        switch (currentDifficulty)
+        {
+            case GameDifficulty.Story:  priceMultiplier = 0.8f; break; // 叙事模式打 8 折
+            case GameDifficulty.Origin: priceMultiplier = 1.0f; break; // 起源模式原价
+            case GameDifficulty.Abyss:  priceMultiplier = 1.5f; break; // 深渊模式奸商加价 50%
+        }
+
+        return Mathf.RoundToInt(item.buyPrice * priceMultiplier);
     }
 
     [ContextMenu("Debug: Clear Memory")]

@@ -143,6 +143,22 @@ public class RuntimeCharacter
             // (未来如果需要加 MaxHP 或 Speed 的 Buff，直接在这里加 else if 即可)
         }
         finalValue += buffBonus; // 把 Buff 加成算进最终结果
+        // ==========================================
+        // 👇 新增：怪物难度乘区 (在一切算完之后，如果是怪物，套上最终乘法)
+        // ==========================================
+        if (data.team == TeamType.Enemy && GameManager.Instance != null)
+        {
+            float difficultyMult = 1.0f;
+            switch (GameManager.Instance.currentDifficulty)
+            {
+                case GameDifficulty.Story:  if (type == StatType.MaxHP || type == StatType.Attack) difficultyMult = 0.7f; break;
+                case GameDifficulty.Abyss:  
+                    if (type == StatType.MaxHP || type == StatType.Attack) difficultyMult = 1.5f; 
+                    else if (type == StatType.Speed) difficultyMult = 1.2f;
+                    break;
+            }
+            finalValue *= difficultyMult;
+        }
         
         return Mathf.RoundToInt(Mathf.Max(0, finalValue));
     }

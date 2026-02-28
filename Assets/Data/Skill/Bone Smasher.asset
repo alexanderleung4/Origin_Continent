@@ -35,4 +35,4 @@ MonoBehaviour:
   sfxClip: {fileID: 0}
   cutInImage: {fileID: 0}
   cutInType: 0
-  hitVFXPrefab: {fileID: 0}
+  hitVFXPrefab: {fileID: 7797600527297037642, guid: 298507ca0955a3f4397b543b0ad01f3b, type: 3}

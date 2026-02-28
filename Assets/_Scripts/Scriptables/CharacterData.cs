@@ -14,7 +14,6 @@ public enum StatType
     Attack,
     Defense,
     Speed,
-    // 👇 必须补上这两个，否则 UI_CharacterSheet 会报错
     CritRate,   // 暴击率
     CritDamage  // 暴击伤害
 }

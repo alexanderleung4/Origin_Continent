@@ -7,6 +7,9 @@ public class LocationData : ScriptableObject
     [Header("Basic Info")]
     public string locationID;
     public string locationName;
+
+    [Header("Home Settings (家园设定)")]
+    public bool isHomeLocation = false; // 勾选此项代表这是个安全屋/家
     [TextArea] public string description;
 
     [Header("Visuals (视觉与场景)")]

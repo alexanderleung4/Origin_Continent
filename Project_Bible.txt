@@ -30,6 +30,7 @@
 * UI_SaveSlot, UI_SceneNPC, UI_SceneStage, UI_Settings, UI_Shop
 * UI_SkillSlot, UI_TimelineIcon, UI_TitleScreen, UIManager, UISound
 * UI_SystemToast (负责全局悬浮播报)
+* UI_EquipmentDetailPanel (装备详情中枢), UI_Tooltip, UI_TooltipTrigger (悬浮信息末梢)
 
 ### 📁 Utils (底层工具)
 * AutoDestroy, CSVLoader。
@@ -79,7 +80,37 @@
 3. **安全回滚:** 任何涉及超过 2 个脚本的跨系统修改，Director 需确认本地 Git 已 Commit。
 
 ====================================================================
-## 5. 多 Agent 协同拓扑 (Multi-Agent Topology)
-* **制作人 (Director):** 掌握最终合并权、Git 物理防线回滚权与引擎内物理连线装配权。
-* **Gemini (首席架构师):** 负责宏观系统设计、逻辑推演、防雪崩漏洞扫描与微创手术方案 (Diff) 输出。受限于物理隔离，必须依赖高精度上下文。
-* **Cursor (IDE代码缝合官):** 驻扎本地的执行层。每次修改前必须隐式读取此《Project_Bible》与项目根目录的 `.cursorrules`，仅负责安全、精准地将架构师的代码融合进本地，严禁擅自修改未授权逻辑。
+## 5. 多 Agent 协同拓扑 (Multi-Agent Topology V2.0 - 虚拟工作室架构)
+为了应对游戏内容的指数级膨胀，本项目采用“分布式 AI 协同开发”架构。各个 Agent 各司其职，通过此《白皮书》与 Director 进行跨维度的信息对齐。
+
+* 👑 **制作人 (Director - User):** * 掌握最终合并权、Git 物理防线回滚权与引擎内物理连线装配权。负责把控游戏核心心流、设定分发任务。
+
+* 🧠 **首席架构师 (Gemini - 主程):** * 负责宏观系统设计、底层 C# 核心代码编写、防雪崩漏洞扫描与微创手术方案 (Diff) 输出。绝对不参与繁琐的数据填表，只负责“造轮子”和“打通管线”。
+
+* ⚙️ **IDE 缝合官 (Cursor/Lingma - 执行层):** * 驻扎本地的物理执行层。负责根据架构师的精确指令，寻找代码行并安全缝合。
+
+* ⚖️ **数值与系统策划 (System/Balance Designer Agent - 待启用):** * 负责填表。根据架构师写好的 `SkillData`, `EquipmentData` 等数据结构，批量产出 JSON/CSV 或直接生成 ScriptableObject 的配置参数。负责计算伤害期望、经济物价膨胀曲线。
+
+* 📜 **叙事与世界观主笔 (Narrative/Lore Master Agent - 待启用):** * 专门负责写故事的文案 AI。产出 `DialogueData` 的 CSV 剧本、极其考究的物品介绍 (Item Description)、任务连环剧情 (Questline)、战败 CG 演出分镜提示词。
+
+* 🗺️ **关卡与内容设计师 (Level/Content Designer Agent - 待启用):** * 负责设计 `StageData` (怪物阵容搭配) 和 `LootTable` (掉落概率表)。
+
+====================================================================
+## 6. 战败CG、动态耐久度与装备交互协议 (Defeat CG & Equipment UX)
+
+### 💀 战败演播与溯源 (Defeat & CG Routing)
+* **击杀溯源:** RuntimeCharacter 记录 `lastKillerID`，根据 CharacterData 的字典配置路由对应的战败 CG 事件。
+* **沉浸式视觉:** DialogueManager 支持读取 BackgroundID，且拥有全屏隐藏按钮 (`btnRestoreFullUI`)，支持点击屏幕任意位置唤醒 UI。
+* **物理惩罚:** 战败后，强制执行锁血 (HP=1) 与防具爆衣 (Body 槽位耐久清零)，并联动全局播报。
+
+### 🛡️ 实体武装与物理磨损 (Dynamic Durability)
+* **实例隔离:** 严禁修改静态 `EquipmentData`。所有实时的耐久度储存于 `RuntimeCharacter.equipmentDurability` 字典中。
+* **绝对豁免:** `maxDurability <= 0` 视为不可破坏物品，直接跳过磨损逻辑与销毁播报。
+* **强制销毁:** 战斗中耐久降至 0 时，触发强制卸下 (`Unequip`) 并失去属性加成。
+
+### 🎛️ 装备 UI 上下文路由 (Equipment UX Pipeline)
+* **互斥面板:** 废弃一键穿脱。点击装备强制弹出 `UI_EquipmentDetailPanel`。
+* **上下文感知 (Context Awareness):**
+  * 从 Inventory 打开 -> 显示【装备】按钮，隐藏卸下。
+  * 从 CharacterSheet 打开 -> 显示【卸下】按钮，并精准读取 RuntimeCharacter 的真实受损耐久度。
+* **悬浮末梢:** 物品格统一挂载 `UI_TooltipTrigger`，读取 `ItemData.itemName` 提供极简黑条提示。
