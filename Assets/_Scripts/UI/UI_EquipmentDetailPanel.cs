@@ -85,13 +85,17 @@ public class UI_EquipmentDetailPanel : MonoBehaviour
             else
             {
                 int currentDura = equip.maxDurability; // 默认满耐久
-                // 如果是从角色身上点开的，去肉身实例里查真实耐久
-                if (source == EquipmentPanelSource.CharacterSheet && GameManager.Instance != null && GameManager.Instance.Player != null)
+                // 👇 核心改动：如果是从角色身上点开的，去【当前焦点角色】实例里查真实耐久！
+                if (source == EquipmentPanelSource.CharacterSheet)
                 {
-                    var player = GameManager.Instance.Player;
-                    if (player.equipmentDurability != null && player.equipmentDurability.ContainsKey(equip.slotType))
+                    // 优先获取正在查看的队友，如果面板没开就拿主角兜底
+                    var targetChar = (UI_CharacterSheet.Instance != null && UI_CharacterSheet.Instance.CurrentFocusCharacter != null) 
+                                     ? UI_CharacterSheet.Instance.CurrentFocusCharacter 
+                                     : GameManager.Instance.Player;
+
+                    if (targetChar != null && targetChar.equipmentDurability != null && targetChar.equipmentDurability.ContainsKey(equip.slotType))
                     {
-                        currentDura = player.equipmentDurability[equip.slotType];
+                        currentDura = targetChar.equipmentDurability[equip.slotType];
                     }
                 }
                 
@@ -120,10 +124,32 @@ public class UI_EquipmentDetailPanel : MonoBehaviour
     {
         if (currentEquip != null && InventoryManager.Instance != null)
         {
-            // 绝杀 Bug：直接调用穿戴逻辑，不再经过 UseItem 的路由拦截！
-            InventoryManager.Instance.EquipItemLogic(currentEquip); 
+            if (currentSource == EquipmentPanelSource.Inventory)
+            {
+                // 1. 如果是从主界面的大背包点开的，问玩家给谁穿！
+                if (UI_TargetSelector.Instance != null)
+                {
+                    UI_TargetSelector.Instance.OpenSelector($"请选择穿戴者：\n{currentEquip.itemName}", (selectedTarget) => 
+                    {
+                        InventoryManager.Instance.EquipItemLogic(currentEquip, selectedTarget);
+                        ClosePanel(); // 穿好后关闭详情面板
+                    });
+                }
+                else
+                {
+                    // 兜底：直接给主角
+                    InventoryManager.Instance.EquipItemLogic(currentEquip, GameManager.Instance.Player);
+                    ClosePanel();
+                }
+            }
+            else 
+            {
+                // 2. 如果是从角色详情面板点开的，直接穿给当前焦点角色！
+                var targetChar = UI_CharacterSheet.Instance.CurrentFocusCharacter;
+                InventoryManager.Instance.EquipItemLogic(currentEquip, targetChar);
+                ClosePanel();
+            }
         }
-        ClosePanel();
     }
 
     private void OnUnequipClicked()

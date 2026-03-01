@@ -43,9 +43,25 @@ public class UI_SaveSlot : MonoBehaviour
         if (contentVisual) contentVisual.SetActive(hasFile);
 
         // 4. 填充信息
-        if (hasFile)
+        if (hasFile && data.roster != null && data.roster.Count > 0)
         {
-            if (infoText) infoText.text = $"Lv.{data.player.level} 冒险者 | {data.locationID}";
+            // A. 获取 0 号位（主角）的数据
+            PlayerSaveData mcData = data.roster[0];
+
+            // B. 动态读取主角的真实名称
+            string mcName = "冒险者"; // 兜底的防爆破默认名
+            if (!string.IsNullOrEmpty(mcData.characterID))
+            {
+                // 去 Resources 文件夹里抓取真实的静态配置表
+                CharacterData mcConfig = Resources.Load<CharacterData>($"Characters/{mcData.characterID}");
+                if (mcConfig != null && !string.IsNullOrEmpty(mcConfig.characterName))
+                {
+                    mcName = mcConfig.characterName; // 提取真名！
+                }
+            }
+
+            // C. 拼接并显示
+            if (infoText) infoText.text = $"Lv.{mcData.level} {mcName} | {data.locationID}";
             if (timeText) timeText.text = data.timestamp;
         }
 

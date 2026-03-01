@@ -1,0 +1,55 @@
+====================================================================
+# 📂 附加档案：《起源大陆》多角色小队系统架构蓝图 (Party & Teammate System)
+====================================================================
+
+## 1. 核心数据管线 (Data & Roster Management)
+小队系统采用“全局名册 + 活跃出战”双轨制，确保剧情杀/离队逻辑不破坏数据。
+* **名册库 (Roster):** `GameManager.unlockedCharacters` 记录当前玩家收集到的所有队友（包括坐冷板凳的）。
+* **出战列 (Active Party):** `GameManager.activeParty` (List<RuntimeCharacter>) 记录当前上阵的队伍。最大容量通常设为 4。
+* **主角霸权协议 (Protagonist Lock):** * `activeParty[0]` 永远是主角。不可卸下，不可替换位置。
+  * **经济共享:** 全队的金币 (Gold) 统一挂载在主角身上，购买物品统一扣除 `activeParty[0].Gold`。
+  * **背包共享:** `InventoryManager` 为系统级全局单例，全队共用一个物理次元背包。
+
+## 2. 角色养成界面复用 (Character Sheet Multiplexing)
+完美复用现有的 `UI_CharacterSheet`，引入“焦点角色 (Focus Character)”机制。
+* **侧边栏导航:** UI 左侧新增一排小队成员的头像 (Avatar Toggle)。
+* **数据注入:** 点击头像时，触发 `SwitchFocusCharacter(RuntimeCharacter target)`。将大面板的 HP/MP、装备槽、技能树、特质徽章的数据源瞬间替换为目标角色。
+* **装备互斥:** 队友穿戴装备时，直接从 InventoryManager 中读取/卸下。保证唯一装备不能被两个人同时穿戴。
+
+## 3. 战斗引擎扩容 (Combat Integration)
+得益于前期优秀的 CTB 架构，战斗引擎的改造极其轻量。
+* **物理入场:** `BattleManager.SetupBattle` 中，将生成玩家的代码从单体替换为遍历 `activeParty`，依次在 `ui.playerSlots` 中生成实体。
+* **经验均分 (EXP Distribution):** 战斗胜利结算时，将怪物的总经验池平分给存活的上阵队员（或者全员获取 100%，由数值策划决定）。未上阵的冷板凳队员可获得 50% 的待机经验。
+* **群体增益:** `TargetScope.All_Ally` 技能将真正发挥作用，一次性为全队施加护盾或回血。
+
+## 4. 叙事与入队协议 (Narrative & Recruitment)
+* **动态入队指令:** 在 `DialogueManager` 的事件解析器中，新增 `JoinParty:CharacterID` 指令。剧情对话推进到特定节点，直接生成 `RuntimeCharacter` 实例并压入名册。
+* **战败路由拓展:** 战败 CG 读取逻辑保持不变。但在渊灭模式下，全军覆没依然触发彻底删档；其他模式下，全队以 1 点 HP 传送回“家”。
+* **离队事件:** 提供 `LeaveParty:CharacterID` 指令。角色因剧情离队时，自动将其身上的装备全部剥落并丢回共享背包，防止极品装备被 NPC 剧情杀带走。
+
+## 5. 存档持久化升级 (SaveData Migration)
+* 原有的 `public PlayerSaveData player;` 结构退役。
+* 升级为 `public List<PlayerSaveData> partyRoster;` 以及 `public List<string> activePartyIDs;`，完美记录所有人的等级、装备、特质及站位顺序。
+====================================================================
+====================================================================
+## 6. 现代二游化交互管线 (Modern RPG UX Pipeline)
+彻底废弃“大背包与大面板左右互搏”的旧世代设计，全面引入“下钻式导航”与“模态弹窗”架构。
+
+### 🃏 6.1 角色总览与下钻 (Roster Drill-down)
+`UI_CharacterSheet` 拆分为两大层级，受全局互斥保护：
+* **层级 1 - 名册大厅 (Page_Roster):** 网格化展示所有已解锁角色的立绘卡牌/大头像。
+* **层级 2 - 深度养成 (Page_Detail):** 点击卡牌进入。包含全身立绘，以及 `Status` 和 `Skill` 等子页签。左上角提供 `[返回]` 按钮退回大厅。
+
+### 🎛️ 6.2 逆向装备流 (Reverse Equipment Lookup)
+摒弃从背包找人的逻辑，采用“从槽位找装备”的精准筛选流。
+* **空槽响应:** 在养成面板点击没有装备的空格子，触发唤出 `UI_EquipmentSelector` (装备筛选器) 模态弹窗。
+* **动态过滤:** 筛选器遍历 `InventoryManager`，仅显示符合当前 `EquipmentSlot` 的装备。
+* **穿戴闭环:** 筛选器中点击装备 -> 弹出 `UI_EquipmentDetailPanel` -> 点击 [装备] -> 装备穿戴于当前查看的角色，关闭筛选器。
+* **卸下闭环:** 在养成面板点击已穿戴的装备 -> 弹出 `UI_EquipmentDetailPanel` -> 点击 [卸下] -> 装备卸下并退回背包。
+
+### 🧪 6.3 药剂定向配发 (Consumable Target Selector)
+解决非战斗状态下的道具指向性问题。
+* **唤出拦截:** 在大背包 (`UI_Inventory`) 中点击消耗品并选择 [使用] 时，拦截默认的 `player[0]` 使用逻辑。
+* **目标索取:** 弹出 `UI_TargetSelector` (目标选择器) 模态悬浮窗，展示当前 `activeParty` 的头像列表与当前血条。
+* **结算执行:** 玩家点击特定头像后，调用 `InventoryManager.ApplyItemEffect(target)`，刷新数值并播放对应角色的回复特效。
+====================================================================

@@ -17,8 +17,10 @@ public class SaveData
     public int day;              // 第几天 [cite: 58]
     public int time;             // 分钟数 [cite: 59]
     
-    // --- 玩家状态 (Player) ---
-    public PlayerSaveData player; 
+    // 单体变小队 (Party & Roster)
+    // ==========================================
+    public List<PlayerSaveData> roster;       // 名册：所有已解锁的队友数据
+    public List<string> activePartyIDs;       // 排序：当前上阵队员的 characterID 列表
 
     // --- 记忆系统 (Memory) ---
     // 记录所有发生过的一次性事件 (e.g. "Quest_01_Done", "Boss_Killed")
@@ -38,6 +40,8 @@ public class SaveData
 [System.Serializable]
 public struct PlayerSaveData
 {
+    // 必须知道这份数据是谁的，读档时才能去 Resources 找对应的立绘和配置！
+    public string characterID;
     public int level;
     public int currentExp;
     public int hp;
@@ -46,7 +50,7 @@ public struct PlayerSaveData
     public int gold;
     public int talentPoints;
 
-    // ⚠️ 难点 B: 字典无法直接序列化，拆分成 List<Struct> [cite: 76, 95]
+    // 字典无法直接序列化，拆分成 List<Struct> [cite: 76, 95]
     // 对应 RuntimeCharacter.allocatedTalents
     public List<TalentEntry> allocatedTalents; 
     

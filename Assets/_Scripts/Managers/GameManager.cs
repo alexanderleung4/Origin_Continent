@@ -32,15 +32,13 @@ public class GameManager : MonoBehaviour
 
     private void OnDayPassed(int newDay)
     {
-        Debug.Log($"[GameManager] 世界迎来了第 {newDay} 天，开始全局状态结算...");
+        Debug.Log($"[GameManager] 世界迎来了第 {newDay} 天，开始全队状态结算...");
         
-        // 通知主角刷新所有带有期限的特质（比如持续 3 天的流血/骨折）
-        if (Player != null)
+        // 通知【所有出战队员】刷新带有期限的特质
+        foreach (var member in _activeParty)
         {
-            Player.TickTraits(1); 
+            if (member != null) member.TickTraits(1); 
         }
-        
-        // 提示：如果您未来做了同伴系统，这里可以直接用 foreach 遍历所有同伴调用 TickTraits
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -114,13 +112,24 @@ public class GameManager : MonoBehaviour
     public GameDifficulty currentDifficulty = GameDifficulty.Origin;
 
     // ========================================================================
-    // 2. 玩家数据 (Player Data)
+    // 2. 小队与名册数据 (Party & Roster Data)
     // ========================================================================
-    [Header("Player Settings")]
-    public CharacterData playerTemplate; // 配置源 (Inspector 拖拽)
+    [Header("Party Settings")]
+    [Tooltip("主角模板 (固定 0 号位，绝不可卸下)")]
+    public CharacterData playerTemplate; 
+    
+    [Tooltip("初始自带的其他队友 (用于编辑器测试)")]
+    public List<CharacterData> initialTeammates = new List<CharacterData>();
 
-    [SerializeField] private RuntimeCharacter playerInstance; // 运行时实例
-    public RuntimeCharacter Player => playerInstance; // 公开访问接口
+    // 活跃出战列 (打仗、吃经验的人)
+    [SerializeField] private List<RuntimeCharacter> _activeParty = new List<RuntimeCharacter>();
+    public List<RuntimeCharacter> activeParty => _activeParty;
+
+    // 名册库 (所有已解锁的队友数据引用)
+    public List<CharacterData> unlockedCharacters = new List<CharacterData>();
+
+    // [黄金兼容接口]: 引擎里的旧代码读取 Player 时，永远返回主角 (0号位)！
+    public RuntimeCharacter Player => (_activeParty != null && _activeParty.Count > 0) ? _activeParty[0] : null;
 
     // ========================================================================
     // 3. 世界状态 (World State)
@@ -170,11 +179,28 @@ public class GameManager : MonoBehaviour
         int savedDiff = PlayerPrefs.GetInt("GlobalDifficulty", (int)GameDifficulty.Origin);
         currentDifficulty = (GameDifficulty)savedDiff;
         Debug.Log($"[System] 全局难度已同步为: {currentDifficulty}");
-        // A. 初始化主角
+        // A. 初始化主角与小队
+        _activeParty.Clear();
+        unlockedCharacters.Clear();
+
         if (playerTemplate != null)
         {
-            playerInstance = new RuntimeCharacter(playerTemplate);
-            Debug.Log($"[GameManager] 主角 {playerInstance.Name} 初始化完成。");
+            // 1. 强制塞入主角 (永远占据 0 号位)
+            RuntimeCharacter mc = new RuntimeCharacter(playerTemplate);
+            _activeParty.Add(mc);
+            unlockedCharacters.Add(playerTemplate);
+            Debug.Log($"[GameManager] 主角 {mc.Name} 初始化完成 (0号位)。");
+
+            // 2. 塞入初始测试队友
+            foreach (var tm in initialTeammates)
+            {
+                if (tm != null)
+                {
+                    _activeParty.Add(new RuntimeCharacter(tm));
+                    unlockedCharacters.Add(tm);
+                    Debug.Log($"[GameManager] 队友 {tm.characterName} 加入队伍！");
+                }
+            }
         }
         else
         {
@@ -200,10 +226,21 @@ public class GameManager : MonoBehaviour
         // 1. 重置记忆
         eventMemory.Clear();
 
-        // 2. 重置主角 (用配置表覆盖当前实例)
+        // 2. 重置小队
+        _activeParty.Clear();
+        unlockedCharacters.Clear();
         if (playerTemplate != null)
         {
-            playerInstance = new RuntimeCharacter(playerTemplate);
+            _activeParty.Add(new RuntimeCharacter(playerTemplate));
+            unlockedCharacters.Add(playerTemplate);
+            foreach (var tm in initialTeammates)
+            {
+                if (tm != null)
+                {
+                    _activeParty.Add(new RuntimeCharacter(tm));
+                    unlockedCharacters.Add(tm);
+                }
+            }
         }
 
         // 3. 重置背包
@@ -297,15 +334,16 @@ public class GameManager : MonoBehaviour
     // 将 Update 里的逻辑抽离出来，保持整洁
     private void UpdateDebugStats()
     {
-        if (playerInstance != null)
+        // 👇 修改：playerInstance -> Player
+        if (Player != null) 
         {
-            _hp = playerInstance.MaxHP;
-            _mp = playerInstance.MaxMP;
-            _stamina = playerInstance.MaxStamina;
-            _atk = playerInstance.Attack;
-            _def = playerInstance.Defense;
-            _spd = playerInstance.Speed;
-            _gold = playerInstance.Gold;
+            _hp = Player.MaxHP;
+            _mp = Player.MaxMP;
+            _stamina = Player.MaxStamina;
+            _atk = Player.Attack;
+            _def = Player.Defense;
+            _spd = Player.Speed;
+            _gold = Player.Gold;
         }
     }
 
@@ -353,11 +391,16 @@ public class GameManager : MonoBehaviour
     [ContextMenu("Test: Hurt Player")]
     public void TestHurtPlayer()
     {
-        if (playerInstance != null)
+        // 👇 修改：playerInstance -> Player
+        if (Player != null)
         {
-            playerInstance.TakeDamage(10);
+            Player.TakeDamage(10);
             if(UIManager.Instance != null) UIManager.Instance.RefreshPlayerStatus();
         }
-        GameManager.Instance.Player.AddTrait(Resources.Load<TraitData>("Traits/Trait_BlackCurse"), 1);
+        // 👇 修改：GameManager.Instance.Player
+        if (GameManager.Instance.Player != null)
+        {
+            GameManager.Instance.Player.AddTrait(Resources.Load<TraitData>("Traits/Trait_BlackCurse"), 1);
+        }
     }
 }

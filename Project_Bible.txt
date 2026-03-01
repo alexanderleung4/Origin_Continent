@@ -24,6 +24,7 @@
 * BuffData, CharacterData, DialogueData, EquipmentData, ItemData
 * LocationData, LootTable, QuestData, ShopData, SkillData, StageData
 * 🤖 子文件夹 AI: AI_Aggressive, AI_Pattern, AI_Smart, AIProfileBase
+* TraitData (被动特质配置表), TraitEffectBase (特殊被动逻辑基类), Effect_CurseDeath (满层暴毙插件)
 
 ### 📁 UI (视图层交互)
 * UI_Battle, UI_BattleEntity, UI_CharacterSheet, UI_CutIn, UI_Interaction
@@ -34,6 +35,7 @@
 * UI_EquipmentDetailPanel (装备详情中枢), UI_Tooltip, UI_TooltipTrigger (悬浮信息末梢)
 * UI_DifficultyToggle (难度全局切换挂件)
 * Interactable_RestPoint (休眠点恢复与时间推进)
+* UI_TraitSlot (特质徽章神经末梢)
 
 ### 📁 Utils (底层工具)
 * AutoDestroy, CSVLoader。
@@ -76,6 +78,10 @@
 * 唯一归宿: GameManager.currentHomeLocation 必须挂载勾选了 `isHomeLocation = true` 的 LocationData。战败后强制调用 GoToLocation 遣返回城。
 * 休眠置换: 场景中的床铺/篝火必须挂载 `Interactable_RestPoint`。休息的本质是“状态重置 + TimeManager.AdvanceTime(时间)”，必须包裹在 SceneFader 的黑屏转场中以掩盖底层数据跳变。
 
+### 🧬 被动特质与状态协议 (Trait & Status Protocol)
+* 插件化隔离: 所有特殊的被动逻辑（如复活、满层暴毙、吸血）绝对禁止写死在 RuntimeCharacter 中。必须继承 TraitEffectBase 制作成 ScriptableObject 插件，并拖入 TraitData 的 Special Effects 列表中。
+* 跨天结算: 拥有期限的天数特质 (remainingDays) 统一由 GameManager 监听 TimeManager.OnDayChanged 事件后，向 Player 广播 TickTraits(1) 进行统一下发结算。
+
 ====================================================================
 ## 3. 极易混淆变量警示录 (Variable Blacklist/Whitelist)
 *AI 在生成代码时，严格使用以下命名，禁止自行发明相似变量。*
@@ -90,6 +96,7 @@
 1. **零盲猜原则:** AI 遇到不确定的类名或变量时，必须先查阅此表；表中没有的，必须向 Director 提问，严禁自行编造。
 2. **微创手术执行:** 代码修改以“找到函数 X，将第 Y 行替换为 Z”的形式输出，禁止毫无理由地重写整个长脚本。
 3. **安全回滚:** 任何涉及超过 2 个脚本的跨系统修改，Director 需确认本地 Git 已 Commit。
+4. **三位一体存档协议 (The Save Protocol):** 当 Director 下达“存档”、“归档”等类似指令时，AI 必须自动且完整地输出：① Git 提交指令；② 《开发进度表》的 Version 更新日志；③ 本《Project_Bible》的拓扑图与协议增补。
 
 ====================================================================
 ## 5. 多 Agent 协同拓扑 (Multi-Agent Topology V2.0 - 虚拟工作室架构)

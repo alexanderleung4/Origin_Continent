@@ -48,7 +48,10 @@ public class InventoryManager : MonoBehaviour
     // --- 👇 新增: 卸下装备并放回背包 ---
     public void UnequipItem(EquipmentSlot slot)
     {
-        var player = GameManager.Instance.Player;
+        // 👇 核心改动：从当前 UI 焦点角色身上脱装备
+        var player = (UI_CharacterSheet.Instance != null && UI_CharacterSheet.Instance.CurrentFocusCharacter != null) 
+                     ? UI_CharacterSheet.Instance.CurrentFocusCharacter 
+                     : GameManager.Instance.Player;
         if (player == null) return;
 
         // 1. 从身上脱下
@@ -100,9 +103,22 @@ public class InventoryManager : MonoBehaviour
             }
             else
             {
-                ApplyItemEffect(GameManager.Instance.Player, item);
-                ConsumeItem(item);
-                Debug.Log($"使用了 {item.itemName}");
+                // 👇 核心改动：呼叫目标选择器！问玩家这药喂给谁！
+                if (UI_TargetSelector.Instance != null)
+                {
+                    UI_TargetSelector.Instance.OpenSelector($"请选择目标：\n使用 {item.itemName}", (selectedTarget) => 
+                    {
+                        ApplyItemEffect(selectedTarget, item);
+                        ConsumeItem(item);
+                        Debug.Log($"对 {selectedTarget.Name} 使用了 {item.itemName}");
+                    });
+                }
+                else
+                {
+                    // 兜底
+                    ApplyItemEffect(GameManager.Instance.Player, item);
+                    ConsumeItem(item);
+                }
             }
         }
             // 👇 分流 B: 装备 (升级为路由到详情面板)
@@ -115,8 +131,19 @@ public class InventoryManager : MonoBehaviour
             }
             else
             {
-                // 保底逻辑：如果 UI 还没做完，直接穿上
-                EquipItemLogic(equipData);
+                // 保底逻辑：如果详情UI坏了，直接呼叫目标选择器盲穿！
+                if (UI_TargetSelector.Instance != null)
+                {
+                    UI_TargetSelector.Instance.OpenSelector($"请选择穿戴者：\n{equipData.itemName}", (selectedTarget) => 
+                    {
+                        EquipItemLogic(equipData, selectedTarget);
+                    });
+                }
+                else
+                {
+                    // 最终物理保底：直接强行塞给队长
+                    EquipItemLogic(equipData, GameManager.Instance.Player);
+                }
             }
         }
         else
@@ -126,29 +153,21 @@ public class InventoryManager : MonoBehaviour
     }
 
     // --- 👇 装备逻辑实现 ---
-    public void EquipItemLogic(EquipmentData newEquip)
+    public void EquipItemLogic(EquipmentData newEquip, RuntimeCharacter target)
     {
-        RuntimeCharacter player = GameManager.Instance.Player;
-        if (player == null) return;
+        if (target == null) return;
 
-        // 1. 检查该槽位是否已经有装备
-        // Unequip 会移除当前装备并返回它
-        EquipmentData oldEquip = player.Unequip(newEquip.slotType);
+        EquipmentData oldEquip = target.Unequip(newEquip.slotType);
 
-        // 2. 如果有旧装备，退回背包
         if (oldEquip != null)
         {
-            AddItem(oldEquip); // 自动刷新 UI
+            AddItem(oldEquip, 1, true); // 静默塞回背包，不弹窗
         }
 
-        // 3. 穿上新装备 (RuntimeCharacter 的属性会自动更新)
-        player.Equip(newEquip);
-
-        // 4. 从背包移除新装备 (只移除1个)
+        target.Equip(newEquip);
         ConsumeItem(newEquip);
 
-        // 5. 反馈
-        Debug.Log($"换装完毕: {newEquip.itemName} | 新攻击力: {player.Attack}");
+        Debug.Log($"[换装] {target.Name} 穿上了 {newEquip.itemName} | 新攻击力: {target.Attack}");
         // 可选: 播放穿装备音效
     }
 

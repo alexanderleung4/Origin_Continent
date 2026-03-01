@@ -100,28 +100,45 @@ public class SaveManager : MonoBehaviour
         data.saveName = (saveID == -1) ? "自动存档 (Auto)" : $"存档 {saveID + 1}";
         data.timestamp = System.DateTime.Now.ToString("yyyy/MM/dd HH:mm");
 
-        // 2. Player
-        var player = GameManager.Instance.Player;
-        data.player.level = player.Level;
-        data.player.currentExp = player.CurrentExp;
-        data.player.hp = player.CurrentHP;
-        data.player.mp = player.CurrentMP;
-        data.player.stamina = player.CurrentStamina;
-        data.player.gold = player.Gold;
-        data.player.talentPoints = player.TalentPoints;
-        data.player.traits = new List<TraitSaveEntry>();
-        foreach(var t in player.traits)
+        // ==========================================
+        // 2. 小队与名册存储 (Party & Roster)
+        // ==========================================
+        data.roster = new List<PlayerSaveData>();
+        data.activePartyIDs = new List<string>();
+
+        // 遍历当前出战队伍（未来做板凳席后，这里要遍历 GameManager.unlockedCharacters 的实例）
+        foreach (var member in GameManager.Instance.activeParty)
         {
-            if (t.data != null) data.player.traits.Add(new TraitSaveEntry { traitID = t.data.traitID, level = t.level });
+            if (member == null || member.data == null) continue;
+            
+            PlayerSaveData pData = new PlayerSaveData();
+            pData.characterID = member.data.characterID; // 极其关键！
+            pData.level = member.Level;
+            pData.currentExp = member.CurrentExp;
+            pData.hp = member.CurrentHP;
+            pData.mp = member.CurrentMP;
+            pData.stamina = member.CurrentStamina;
+            pData.gold = member.Gold; // 全队共享队长的钱包
+            pData.talentPoints = member.TalentPoints;
+
+            // 存特质
+            pData.traits = new List<TraitSaveEntry>();
+            foreach (var t in member.traits)
+                if (t.data != null) pData.traits.Add(new TraitSaveEntry { traitID = t.data.traitID, level = t.level });
+
+            // 存天赋
+            pData.allocatedTalents = new List<TalentEntry>();
+            foreach (var kvp in member.allocatedTalents)
+                pData.allocatedTalents.Add(new TalentEntry(kvp.Key, kvp.Value));
+
+            // 存装备
+            pData.equipment = new List<EquipmentEntry>();
+            foreach (var kvp in member.equipment)
+                if (kvp.Value != null) pData.equipment.Add(new EquipmentEntry(kvp.Key, kvp.Value.name));
+
+            data.roster.Add(pData);
+            data.activePartyIDs.Add(member.data.characterID); // 记录站位顺序
         }
-
-        data.player.allocatedTalents = new List<TalentEntry>();
-        foreach(var kvp in player.allocatedTalents)
-            data.player.allocatedTalents.Add(new TalentEntry(kvp.Key, kvp.Value));
-
-        data.player.equipment = new List<EquipmentEntry>();
-        foreach(var kvp in player.equipment)
-            if(kvp.Value != null) data.player.equipment.Add(new EquipmentEntry(kvp.Key, kvp.Value.name));
 
         // 3. World
         if (GameManager.Instance.currentLocation != null)
@@ -168,37 +185,80 @@ public class SaveManager : MonoBehaviour
 
         SaveData data = JsonUtility.FromJson<SaveData>(File.ReadAllText(path));
 
-        // 1. Player
-        var player = GameManager.Instance.Player;
-        player.Level = data.player.level;
-        player.CurrentExp = data.player.currentExp;
-        player.CurrentHP = data.player.hp;
-        player.CurrentMP = data.player.mp;
-        player.CurrentStamina = data.player.stamina;
-        player.Gold = data.player.gold;
-        player.TalentPoints = data.player.talentPoints;
-        player.traits.Clear();
-        if (data.player.traits != null)
+        // ==========================================
+        // 1. 读取小队与名册 (Party & Roster)
+        // ==========================================
+        GameManager.Instance.activeParty.Clear();
+        GameManager.Instance.unlockedCharacters.Clear();
+
+        // 建立一个临时字典，用来装捏好的肉身，方便稍后按顺序排队
+        Dictionary<string, RuntimeCharacter> loadedCharacters = new Dictionary<string, RuntimeCharacter>();
+
+        if (data.roster != null)
         {
-            foreach(var tSave in data.player.traits)
+            foreach (var pData in data.roster)
             {
-                // 注意：这里假设您把所有的 TraitData 预制体存放在 Resources/Traits/ 文件夹下！
-                TraitData loadedTrait = Resources.Load<TraitData>($"Traits/{tSave.traitID}");
-                if (loadedTrait != null)
+                // ⚠️ 核心寻址: 根据 ID 去 Resources 文件夹里把静态配置表抓出来！
+                CharacterData cData = Resources.Load<CharacterData>($"Characters/{pData.characterID}");
+                if (cData == null) 
                 {
-                    player.traits.Add(new RuntimeCharacter.ActiveTrait { data = loadedTrait, level = tSave.level });
+                    Debug.LogError($"[SaveManager] 读档警告：找不到角色配置表 Resources/Characters/{pData.characterID}，该队友丢失！");
+                    continue;
                 }
+
+                // 捏造肉身
+                RuntimeCharacter rc = new RuntimeCharacter(cData);
+                rc.Level = pData.level;
+                rc.CurrentExp = pData.currentExp;
+                rc.CurrentHP = pData.hp;
+                rc.CurrentMP = pData.mp;
+                rc.CurrentStamina = pData.stamina;
+                rc.Gold = pData.gold;
+                rc.TalentPoints = pData.talentPoints;
+
+                // 读特质
+                rc.traits.Clear();
+                if (pData.traits != null)
+                {
+                    foreach (var tSave in pData.traits)
+                    {
+                        TraitData loadedTrait = Resources.Load<TraitData>($"Traits/{tSave.traitID}");
+                        // 兼容跨天流逝：如果是永久特质， remainingDays 设为 -1
+                        if (loadedTrait != null) rc.traits.Add(new RuntimeCharacter.ActiveTrait { data = loadedTrait, level = tSave.level, remainingDays = loadedTrait.isPermanent ? -1 : loadedTrait.durationDays });
+                    }
+                }
+
+                // 读天赋
+                rc.allocatedTalents.Clear();
+                if (pData.allocatedTalents != null)
+                    foreach (var entry in pData.allocatedTalents) rc.allocatedTalents.Add(entry.statType, entry.points);
+
+                // 读装备
+                rc.equipment.Clear();
+                if (pData.equipment != null)
+                {
+                    foreach (var entry in pData.equipment)
+                    {
+                        EquipmentData equip = Resources.Load<EquipmentData>($"Items/{entry.itemID}");
+                        if (equip != null) rc.equipment.Add(entry.slot, equip);
+                    }
+                }
+
+                loadedCharacters[pData.characterID] = rc;
+                GameManager.Instance.unlockedCharacters.Add(cData); // 登记进名册
             }
         }
 
-        player.allocatedTalents.Clear();
-        foreach(var entry in data.player.allocatedTalents) player.allocatedTalents.Add(entry.statType, entry.points);
-
-        player.equipment.Clear();
-        foreach(var entry in data.player.equipment)
+        // 按存档里的出战顺序，把角色塞回 activeParty 阵列
+        if (data.activePartyIDs != null)
         {
-            EquipmentData equip = Resources.Load<EquipmentData>($"Items/{entry.itemID}");
-            if(equip != null) player.equipment.Add(entry.slot, equip);
+            foreach (var id in data.activePartyIDs)
+            {
+                if (loadedCharacters.ContainsKey(id))
+                {
+                    GameManager.Instance.activeParty.Add(loadedCharacters[id]);
+                }
+            }
         }
 
         // 2. World

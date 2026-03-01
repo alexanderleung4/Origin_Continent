@@ -5,9 +5,28 @@ using System.Collections.Generic;
 
 public class UI_CharacterSheet : MonoBehaviour
 {
+    public static UI_CharacterSheet Instance { get; private set; } 
+
     [Header("UI References")]
     public GameObject panelRoot;
     public Button closeButton;
+
+    // ==========================================
+    // 👇 新增: 现代二游化分层导航 (Drill-down Navigation)
+    // ==========================================
+    [Header("Drill-down Navigation (大厅与详情页)")]
+    public GameObject pageRoster;        // 第一层：名册大厅 (包含所有卡牌)
+    public GameObject pageDetail;        // 第二层：详情界面 (以前的老界面全塞这里)
+    public Button btnBackToRoster;       // 在详情页点击返回大厅的按钮
+
+    public Transform rosterGridContainer;// 第一层：挂载大卡牌的网格父节点
+    public GameObject rosterCardPrefab;  // 第一层：角色卡牌预制体
+    // ==========================================
+
+    [Header("Party Roster (详情页侧边快速切换栏)")]
+    public Transform rosterContainer;        
+    public GameObject rosterAvatarPrefab;    
+    public RuntimeCharacter CurrentFocusCharacter { get; private set; } 
 
     [Header("Portrait (公共区域)")]
     public Image portraitImage;
@@ -16,60 +35,60 @@ public class UI_CharacterSheet : MonoBehaviour
     public Slider expSlider;
     public TextMeshProUGUI expText; 
 
-    // --- 👇 新增: 分页系统 ---
     [Header("Tabs (分页)")]
-    public Button btnTabStatus; // 属性页按钮
-    public Button btnTabSkills; // 技能页按钮
-    public GameObject pageStatus; // 属性页内容父节点
-    public GameObject pageSkills; // 技能页内容父节点
+    public Button btnTabStatus; 
+    public Button btnTabSkills; 
+    public GameObject pageStatus; 
+    public GameObject pageSkills; 
 
-    // --- 属性页内容 (移入 PageStatus) ---
     [Header("Page: Status")]
     public TextMeshProUGUI talentText; 
     public Color normalColor = Color.white;
     public Color highlightColor = Color.yellow;
     
-    // 属性文本
     public TextMeshProUGUI txtHP, txtMP, txtStamina;
     public TextMeshProUGUI txtAtk, txtDef, txtSpd, txtCritRate, txtCritDmg;
 
-    // 加点按钮
     public Button btnPlusHP, btnPlusMP, btnPlusStamina;
     public Button btnPlusAtk, btnPlusDef, btnPlusSpd, btnPlusCritRate, btnPlusCritDmg;
 
-    // 装备槽
     public List<Button> equipmentSlots; 
     public Sprite defaultSlotSprite; 
 
-    // --- 被动特质区域 ---
     [Header("Traits (被动特质)")]
-    public Transform traitListContainer; // 挂载特质徽章的 GridLayoutGroup 父节点
-    public GameObject traitSlotPrefab;   // 刚写好的 UI_TraitSlot 预制体
+    public Transform traitListContainer; 
+    public GameObject traitSlotPrefab;   
 
-    // --- 技能页内容 ---
     [Header("Page: Skills")]
-    public Transform skillListContainer; // 技能列表的 Content
-    public GameObject skillSlotPrefab;   // 拖入挂了 UI_SkillSlot 的预制体
+    public Transform skillListContainer; 
+    public GameObject skillSlotPrefab;   
     
     [Header("Skill Details (详情弹窗/区域)")]
-    public GameObject skillDetailPanel;  // 详情面板
+    public GameObject skillDetailPanel;  
     public TextMeshProUGUI detailName;
     public TextMeshProUGUI detailDesc;
-    public TextMeshProUGUI detailPower;  // 威力/倍率
+    public TextMeshProUGUI detailPower;  
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+    }
 
     private void Start()
     {
         CloseMenu();
         if (closeButton != null) closeButton.onClick.AddListener(CloseMenu);
         
+        // 👇 新增：绑定返回大厅按钮
+        if (btnBackToRoster != null) btnBackToRoster.onClick.AddListener(OpenRosterHall);
+
         if (InventoryManager.Instance != null)
             InventoryManager.Instance.OnInventoryChanged.AddListener(OnInventoryChanged);
 
-        // 绑定分页按钮
         if (btnTabStatus) btnTabStatus.onClick.AddListener(() => SwitchTab(true));
         if (btnTabSkills) btnTabSkills.onClick.AddListener(() => SwitchTab(false));
 
-        // 绑定加点按钮 (保持原样)
         BindButton(btnPlusHP, StatType.MaxHP);
         BindButton(btnPlusMP, StatType.MaxMP);
         BindButton(btnPlusStamina, StatType.MaxStamina);
@@ -79,7 +98,6 @@ public class UI_CharacterSheet : MonoBehaviour
         BindButton(btnPlusCritRate, StatType.CritRate); 
         BindButton(btnPlusCritDmg, StatType.CritDamage);
 
-        // 绑定装备槽
         for (int i = 0; i < equipmentSlots.Count; i++)
         {
             int index = i;
@@ -97,29 +115,14 @@ public class UI_CharacterSheet : MonoBehaviour
             InventoryManager.Instance.OnInventoryChanged.RemoveListener(OnInventoryChanged);
     }
 
-    // --- 交互逻辑 ---
-
-    private void SwitchTab(bool showStatus)
-    {
-        if (pageStatus) pageStatus.SetActive(showStatus);
-        if (pageSkills) pageSkills.SetActive(!showStatus);
-        
-        // 刷新当前页
-        if (showStatus) RefreshUI();
-        else RefreshSkills();
-
-        // 隐藏技能详情
-        if (skillDetailPanel) skillDetailPanel.SetActive(false);
-    }
-
-    // --- 显示逻辑 ---
-
+    // ==========================================
+    // 🚪 核心导航逻辑：大厅 -> 详情
+    // ==========================================
     public void OpenMenu()
     {
-        if (UIManager.Instance != null) UIManager.Instance.OnOpenPanel(); // 使用新的互斥+Blocker
-
+        if (UIManager.Instance != null) UIManager.Instance.OnOpenPanel(); 
         panelRoot.SetActive(true);
-        SwitchTab(true); // 默认打开属性页
+        OpenRosterHall(); // 每次打开，强制先看到选人大厅！
     }
 
     public void CloseMenu()
@@ -132,23 +135,118 @@ public class UI_CharacterSheet : MonoBehaviour
         if (panelRoot.activeSelf) CloseMenu(); else OpenMenu();
     }
 
+    // 1. 开启选人大厅
+    private void OpenRosterHall()
+    {
+        if (pageRoster) pageRoster.SetActive(true);
+        if (pageDetail) pageDetail.SetActive(false); // 隐藏深层详情
+        if (skillDetailPanel) skillDetailPanel.SetActive(false);
+
+        RefreshRosterHall();
+    }
+
+    // 2. 渲染大厅里的卡牌
+    private void RefreshRosterHall()
+    {
+        if (rosterGridContainer == null || rosterCardPrefab == null) return;
+
+        foreach (Transform child in rosterGridContainer) Destroy(child.gameObject);
+
+        var party = GameManager.Instance.activeParty; // 未来可改为 unlockedCharacters 展示冷板凳
+        if (party == null) return;
+
+        foreach (var member in party)
+        {
+            if (member == null || member.data == null) continue;
+
+            GameObject card = Instantiate(rosterCardPrefab, rosterGridContainer);
+            
+            // 智能寻址：尝试找预制体上的立绘和名字组件
+            Image img = card.transform.Find("Image_Portrait")?.GetComponent<Image>();
+            if (img == null) img = card.GetComponent<Image>(); // 兜底
+            if (img != null && member.data.portrait != null) img.sprite = member.data.portrait;
+
+            TextMeshProUGUI nameTxt = card.transform.Find("Text_Name")?.GetComponent<TextMeshProUGUI>();
+            if (nameTxt != null) nameTxt.text = member.Name;
+
+            TextMeshProUGUI lvTxt = card.transform.Find("Text_Level")?.GetComponent<TextMeshProUGUI>();
+            if (lvTxt != null) lvTxt.text = $"Lv.{member.Level}";
+
+            // 绑定点击事件：下钻到详情页
+            Button btn = card.GetComponent<Button>();
+            if (btn != null) btn.onClick.AddListener(() => OpenDetail(member));
+        }
+    }
+
+    // 3. 点击卡牌，进入角色详情！
+    private void OpenDetail(RuntimeCharacter target)
+    {
+        if (pageRoster) pageRoster.SetActive(false);
+        if (pageDetail) pageDetail.SetActive(true);
+
+        SetFocusCharacter(target);
+        RefreshSideRosterUI(); // 渲染详情页左侧的快速切换小头像
+        SwitchTab(true);       // 默认打开属性页
+    }
+
+    // 详情页内部的切人逻辑
+    public void SetFocusCharacter(RuntimeCharacter target)
+    {
+        if (target == null) return;
+        CurrentFocusCharacter = target;
+        
+        if (pageStatus != null && pageStatus.activeSelf) RefreshUI();
+        else RefreshSkills();
+    }
+
+    // 渲染详情页的侧边小头像栏
+    private void RefreshSideRosterUI()
+    {
+        if (rosterContainer == null || rosterAvatarPrefab == null) return;
+        foreach (Transform child in rosterContainer) Destroy(child.gameObject);
+        var party = GameManager.Instance.activeParty;
+        if (party == null) return;
+
+        foreach (var member in party)
+        {
+            if (member == null || member.data == null) continue;
+            GameObject go = Instantiate(rosterAvatarPrefab, rosterContainer);
+            Image img = go.GetComponent<Image>();
+            if (img == null) img = go.transform.Find("Icon")?.GetComponent<Image>();
+            if (img != null && member.data.portrait != null) img.sprite = member.data.portrait;
+
+            Button btn = go.GetComponent<Button>();
+            if (btn != null) btn.onClick.AddListener(() => SetFocusCharacter(member));
+        }
+    }
+    // ==========================================
+
+    private void SwitchTab(bool showStatus)
+    {
+        if (pageStatus) pageStatus.SetActive(showStatus);
+        if (pageSkills) pageSkills.SetActive(!showStatus);
+        
+        if (showStatus) RefreshUI();
+        else RefreshSkills();
+
+        if (skillDetailPanel) skillDetailPanel.SetActive(false);
+    }
+
     private void OnInventoryChanged()
     {
         if (panelRoot.activeSelf) 
         {
-            // 如果开着，就刷新当前页
             if (pageStatus != null && pageStatus.activeSelf) RefreshUI();
             else RefreshSkills();
         }
     }
 
-    // --- Page 1: 属性刷新 (保持原样) ---
+    // --- Page 1: 属性刷新 ---
     public void RefreshUI()
     {
-        var player = GameManager.Instance.Player;
+        var player = CurrentFocusCharacter; 
         if (player == null) return;
 
-        // 公共信息
         if (nameText) nameText.text = player.Name;
         if (levelText) levelText.text = $"Lv.{player.Level}";
         
@@ -173,7 +271,6 @@ public class UI_CharacterSheet : MonoBehaviour
             if (expText) expText.text = $"{player.CurrentLevelProgress} / {player.ExpRequiredForLevelUp}";
         }
 
-        // 属性数值
         if (txtHP) txtHP.text = $"{player.CurrentHP} / {player.MaxHP}"; 
         if (txtMP) txtMP.text = $"{player.CurrentMP} / {player.MaxMP}";
         if (txtStamina) txtStamina.text = $"{player.CurrentStamina} / {player.MaxStamina}";
@@ -183,7 +280,6 @@ public class UI_CharacterSheet : MonoBehaviour
         if (txtCritRate) txtCritRate.text = $"{player.CritRate * 100:F0}%";
         if (txtCritDmg) txtCritDmg.text = $"{player.CritDamage * 100:F0}%";
 
-        // 天赋
         bool canSpend = player.TalentPoints > 0;
         if (talentText)
         {
@@ -200,14 +296,12 @@ public class UI_CharacterSheet : MonoBehaviour
         SetBtnActive(btnPlusCritRate, canSpend);
         SetBtnActive(btnPlusCritDmg, canSpend);
 
-        // 装备
         foreach (var btn in equipmentSlots) 
         {
             if(btn != null && btn.image != null)
             {
                 btn.image.sprite = defaultSlotSprite; 
                 btn.image.color = (defaultSlotSprite == null) ? Color.clear : Color.white; 
-                // 👇 新增: 清空可能残留的 Tooltip 数据
                 UI_TooltipTrigger tooltip = btn.GetComponent<UI_TooltipTrigger>();
                 if (tooltip != null) tooltip.currentItem = null;
             }
@@ -222,54 +316,41 @@ public class UI_CharacterSheet : MonoBehaviour
                 {
                     btn.image.sprite = kvp.Value.icon;
                     btn.image.color = Color.white;
-                    // 👇 新增: 注入真实的装备数据给 Tooltip
                     UI_TooltipTrigger tooltip = btn.GetComponent<UI_TooltipTrigger>();
                     if (tooltip == null) tooltip = btn.gameObject.AddComponent<UI_TooltipTrigger>();
                     tooltip.currentItem = kvp.Value;
                 }
             }
         }
-        // --- 刷新被动特质列表 ---
+
         if (traitListContainer != null && traitSlotPrefab != null)
         {
-            // 清空旧数据
             foreach (Transform child in traitListContainer) Destroy(child.gameObject);
 
-            // 生成新徽章
             foreach (var trait in player.traits)
             {
                 if (trait.data == null) continue;
-                
                 GameObject go = Instantiate(traitSlotPrefab, traitListContainer);
                 UI_TraitSlot slot = go.GetComponent<UI_TraitSlot>();
-                if (slot != null)
-                {
-                    slot.Setup(trait, OnTraitSelected);
-                }
+                if (slot != null) slot.Setup(trait, OnTraitSelected);
             }
         }
     }
 
-    // --- 👇 Page 2: 技能刷新 (新增) ---
+    // --- Page 2: 技能刷新 ---
     public void RefreshSkills()
     {
         if (skillListContainer == null || skillSlotPrefab == null) return;
-
-        // 1. 清空列表
         foreach (Transform child in skillListContainer) Destroy(child.gameObject);
 
-        var player = GameManager.Instance.Player;
+        var player = CurrentFocusCharacter;
         if (player == null) return;
 
-        // 2. 生成技能 (目前使用 startingSkills，未来可改为 learnedSkills)
         foreach (var skill in player.data.startingSkills)
         {
             GameObject go = Instantiate(skillSlotPrefab, skillListContainer);
             UI_SkillSlot slot = go.GetComponent<UI_SkillSlot>();
-            if (slot != null)
-            {
-                slot.Setup(skill, OnSkillSelected);
-            }
+            if (slot != null) slot.Setup(skill, OnSkillSelected);
         }
     }
 
@@ -281,7 +362,6 @@ public class UI_CharacterSheet : MonoBehaviour
             if (detailName) detailName.text = skill.skillName;
             if (detailDesc) detailDesc.text = skill.description;
 
-            // 👇 动态解析 Skill Effects 列表，生成描述文本
             if (detailPower != null)
             {
                 if (skill.effects == null || skill.effects.Count == 0)
@@ -296,7 +376,6 @@ public class UI_CharacterSheet : MonoBehaviour
                     SkillEffect effect = skill.effects[i];
                     string targetStr = effect.effectTarget == EffectTarget.Self ? "自身" : "目标";
                     
-                    // 拼接属性加成文本 (例: "100% 攻击力加成")
                     string scalingStr = "";
                     if (effect.scalingStat != ScalingStat.None && effect.scalingMultiplier > 0)
                     {
@@ -320,14 +399,10 @@ public class UI_CharacterSheet : MonoBehaviour
                             BuffData b = effect.buffToApply;
                             string buffDesc = "";
                             
-                            if (b.type == BuffType.DamageReduction) 
-                                buffDesc = $"免伤 {b.baseValue}%";
-                            else if (b.type == BuffType.Shield) 
-                                buffDesc = $"护盾值 {b.baseValue}{scalingStr}";
-                            else if (b.type == BuffType.StatBoost_Attack) 
-                                buffDesc = $"提升攻击力 {b.baseValue}{scalingStr}";
-                            else if (b.type == BuffType.StatBoost_Defense) 
-                                buffDesc = $"提升防御力 {b.baseValue}{scalingStr}";
+                            if (b.type == BuffType.DamageReduction) buffDesc = $"免伤 {b.baseValue}%";
+                            else if (b.type == BuffType.Shield) buffDesc = $"护盾值 {b.baseValue}{scalingStr}";
+                            else if (b.type == BuffType.StatBoost_Attack) buffDesc = $"提升攻击力 {b.baseValue}{scalingStr}";
+                            else if (b.type == BuffType.StatBoost_Defense) buffDesc = $"提升防御力 {b.baseValue}{scalingStr}";
 
                             powerStr += $"【效果{i+1}】: 为{targetStr}施加 [{b.buffName}] ({buffDesc}，持续 {b.durationTurns} 回合)";
                         }
@@ -336,25 +411,20 @@ public class UI_CharacterSheet : MonoBehaviour
                             powerStr += $"【效果{i+1}】: 为{targetStr}施加状态 (未配置Buff数据)";
                         }
                     }
-                    
                     powerStr += "\n";
                 }
                 detailPower.text = powerStr;
             }
         }
     }
-    // --- 👇 新增: 点击特质徽章显示详情 ---
+
     private void OnTraitSelected(RuntimeCharacter.ActiveTrait trait)
     {
-        // 我们直接“借用”技能详情面板来显示被动特质！这样不用再新建一个 UI 面板
         if (skillDetailPanel != null)
         {
             skillDetailPanel.SetActive(true);
-            
-            // 显示特质名和等级
             if (detailName) detailName.text = $"{trait.data.traitName} (Lv.{trait.level})";
             
-            // 拼接描述信息
             string desc = trait.data.baseDescription;
             if (!trait.data.isPermanent && trait.remainingDays > 0)
             {
@@ -362,7 +432,6 @@ public class UI_CharacterSheet : MonoBehaviour
             }
             if (detailDesc) detailDesc.text = desc;
 
-            // 读取当前层级的专属效果描述
             if (detailPower != null)
             {
                 if (trait.level > 0 && trait.level <= trait.data.levels.Count)
@@ -378,23 +447,11 @@ public class UI_CharacterSheet : MonoBehaviour
         }
     }
 
-    // 辅助方法：把枚举翻译成中文文本
     private string GetStatName(ScalingStat stat)
     {
-        switch (stat)
-        {
-            case ScalingStat.Attack: return "攻击力";
-            case ScalingStat.Defense: return "防御力";
-            case ScalingStat.MaxHP: return "最大生命";
-            case ScalingStat.CurrentHP: return "当前生命";
-            case ScalingStat.MaxMP: return "最大法力";
-            case ScalingStat.CurrentMP: return "当前法力";
-            case ScalingStat.Speed: return "速度";
-            default: return "";
-        }
+        switch (stat) { case ScalingStat.Attack: return "攻击力"; case ScalingStat.Defense: return "防御力"; case ScalingStat.MaxHP: return "最大生命"; case ScalingStat.CurrentHP: return "当前生命"; case ScalingStat.MaxMP: return "最大法力"; case ScalingStat.CurrentMP: return "当前法力"; case ScalingStat.Speed: return "速度"; default: return ""; }
     }
 
-    // --- 辅助方法 ---
     private void BindButton(Button btn, StatType type)
     {
         if (btn != null)
@@ -406,23 +463,29 @@ public class UI_CharacterSheet : MonoBehaviour
 
     private void OnPlusClicked(StatType type)
     {
-        var player = GameManager.Instance.Player;
+        var player = CurrentFocusCharacter;
         if (player != null) { player.SpendTalent(type); RefreshUI(); }
     }
 
     private void OnEquipmentSlotClicked(int index)
     {
         EquipmentSlot slot = GetSlotByIndex(index);
-        var player = GameManager.Instance.Player;
+        var player = CurrentFocusCharacter; 
+        
+        // 如果有装备，弹详情面板；如果没有装备，我们在刀法 2 中再接入 UI_EquipmentSelector！
         if (player.equipment.ContainsKey(slot)) 
         { 
-            // 获取角色身上这件真实的装备（带耐久度损耗的）
             EquipmentData equip = player.equipment[slot];
-            
-            // 劫持路由：不再直接卸下，而是打开详情面板！
             if (UI_EquipmentDetailPanel.Instance != null)
             {
                 UI_EquipmentDetailPanel.Instance.OpenPanel(equip, EquipmentPanelSource.CharacterSheet);
+            }
+        }
+        else
+        {
+            if (UI_EquipmentSelector.Instance != null)
+            {
+                UI_EquipmentSelector.Instance.OpenSelector(slot);
             }
         }
     }
@@ -434,31 +497,11 @@ public class UI_CharacterSheet : MonoBehaviour
 
     private int GetSlotIndex(EquipmentSlot slot)
     {
-        switch (slot)
-        {
-            case EquipmentSlot.Weapon: return 0;
-            case EquipmentSlot.Head: return 1;
-            case EquipmentSlot.Body: return 2;
-            case EquipmentSlot.Legs: return 3;
-            case EquipmentSlot.Feet: return 4;
-            case EquipmentSlot.Neck: return 5;
-            case EquipmentSlot.Hands: return 6;
-            default: return -1;
-        }
+        switch (slot) { case EquipmentSlot.Weapon: return 0; case EquipmentSlot.Head: return 1; case EquipmentSlot.Body: return 2; case EquipmentSlot.Legs: return 3; case EquipmentSlot.Feet: return 4; case EquipmentSlot.Neck: return 5; case EquipmentSlot.Hands: return 6; default: return -1; }
     }
     
     private EquipmentSlot GetSlotByIndex(int index)
     {
-        switch (index)
-        {
-            case 0: return EquipmentSlot.Weapon;
-            case 1: return EquipmentSlot.Head;
-            case 2: return EquipmentSlot.Body;
-            case 3: return EquipmentSlot.Legs;
-            case 4: return EquipmentSlot.Feet;
-            case 5: return EquipmentSlot.Neck;
-            case 6: return EquipmentSlot.Hands;
-            default: return EquipmentSlot.Weapon; 
-        }
+        switch (index) { case 0: return EquipmentSlot.Weapon; case 1: return EquipmentSlot.Head; case 2: return EquipmentSlot.Body; case 3: return EquipmentSlot.Legs; case 4: return EquipmentSlot.Feet; case 5: return EquipmentSlot.Neck; case 6: return EquipmentSlot.Hands; default: return EquipmentSlot.Weapon; }
     }
 }

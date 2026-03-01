@@ -15,7 +15,7 @@ MonoBehaviour:
   traitID: Trait_BlackCurse
   traitName: "\u9ED1\u6B7B\u5492"
   type: 1
-  icon: {fileID: 0}
+  icon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
   baseDescription: "\u6765\u81EA\u8D77\u6E90\u5927\u9646\u7684\u8BC5\u5492\u3002\u53E0\u6EE1\u5C42\u6570\u5373\u4E3A\u6B7B\u4EA1\u3002\u6BCF\u6218\u8D25\u4E00\u6B21\u53E0\u4E00\u5C42\u3002"
   isPermanent: 1
   durationDays: -1

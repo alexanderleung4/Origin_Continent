@@ -125,8 +125,25 @@ public class BattleManager : MonoBehaviour
         foreach (Transform slot in ui.playerSlots) foreach (Transform child in slot) Destroy(child.gameObject);
         foreach (Transform slot in ui.enemySlots) foreach (Transform child in slot) Destroy(child.gameObject);
 
-        // 生成玩家 (目前固定放前排中间 Slot 1)
-        SpawnEntity(GameManager.Instance.Player, true, 1);
+        // ==========================================
+        // 👇 核心改动：生成整个玩家小队
+        // ==========================================
+        // 阵列排布预设：主角固定放1号位(前排中)，队友依次放 0(前排上), 2(前排下), 4(后排中), 3, 5
+        int[] posLayout = { 1, 0, 2, 4, 3, 5 };
+        
+        if (GameManager.Instance != null && GameManager.Instance.activeParty != null)
+        {
+            for (int i = 0; i < GameManager.Instance.activeParty.Count; i++)
+            {
+                RuntimeCharacter member = GameManager.Instance.activeParty[i];
+                if (member != null)
+                {
+                    // 防止小队人数超过格子数
+                    int slot = i < posLayout.Length ? posLayout[i] : i; 
+                    SpawnEntity(member, true, slot);
+                }
+            }
+        }
 
         // 生成敌人
         foreach (var spawn in stage.enemies)
@@ -353,7 +370,17 @@ public class BattleManager : MonoBehaviour
         }
     }
     // 辅助获取方法
-    private BattleEntity GetFirstAlivePlayer() { foreach (var e in allEntities) if (e.isPlayerSide && !e.isDead) return e; return null; }
+    // 从死盯第一个人，改为在活着的玩家里随机挑一个打 (如果未来做嘲讽系统，可以在这里加权重)
+    private BattleEntity GetFirstAlivePlayer() 
+    { 
+        List<BattleEntity> alives = new List<BattleEntity>();
+        foreach (var e in allEntities) if (e.isPlayerSide && !e.isDead) alives.Add(e); 
+        
+        if (alives.Count > 0) 
+            return alives[UnityEngine.Random.Range(0, alives.Count)]; // 随机抽一个倒霉蛋
+            
+        return null; 
+    }
     private BattleEntity GetFirstAliveEnemy() { foreach (var e in allEntities) if (!e.isPlayerSide && !e.isDead) return e; return null; }
 // ================== 新增：群体索敌辅助 ==================
     private List<BattleEntity> GetAllAliveEnemies()
@@ -888,12 +915,31 @@ public class BattleManager : MonoBehaviour
                     }
                 }
 
-                GetFirstAlivePlayer().runtime.GainExp(expGain);
-                GetFirstAlivePlayer().runtime.Gold += goldGain;
-                if (expGain > 0 && UI_SystemToast.Instance != null)
-                    UI_SystemToast.Instance.Show("BattleExp", "获得经验:", expGain, null);
+                // ==========================================
+                // 👇 核心改动：多角色分赃逻辑
+                // ==========================================
+                // A. 队长 (0号位) 掌管全队金币
+                if (GameManager.Instance.activeParty.Count > 0)
+                {
+                    GameManager.Instance.activeParty[0].Gold += goldGain;
+                }
+
+                // B. 存活者平分经验
+                List<RuntimeCharacter> aliveMembers = new List<RuntimeCharacter>();
+                foreach (var e in allEntities) if (e.isPlayerSide && !e.isDead) aliveMembers.Add(e.runtime);
+
+                if (aliveMembers.Count > 0 && expGain > 0)
+                {
+                    int expPerPerson = Mathf.Max(1, expGain / aliveMembers.Count); // 保底给1点，防止除出0
+                    foreach (var m in aliveMembers) m.GainExp(expPerPerson);
+                    
+                    if (UI_SystemToast.Instance != null)
+                        UI_SystemToast.Instance.Show("BattleExp", $"全队存活者各获得经验:", expPerPerson, null);
+                }
+
                 if (goldGain > 0 && UI_SystemToast.Instance != null)
-                    UI_SystemToast.Instance.Show("Gold", "获得金币:", goldGain, null);
+                    UI_SystemToast.Instance.Show("Gold", "队伍获得金币:", goldGain, null);
+
                 LogBattle($"获得经验: {expGain}, 金币: {goldGain}");
                 if (hasDrops) LogBattle(dropMsg);
             }
@@ -1145,6 +1191,4 @@ public class BattleManager : MonoBehaviour
         if (ui != null && ui.battleLogText != null) ui.battleLogText.text = msg;
         Debug.Log($"[Battle] {msg}");
     }
-
-
 }
