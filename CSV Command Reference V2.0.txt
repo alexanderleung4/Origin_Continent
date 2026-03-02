@@ -1,0 +1,18 @@
+# 《起源大陆》策划速查表 (CSV Command Reference V2.0)
+
+| 意图 (Intent) | 指令格式 (Command:Value) | 示例 (Excel 写法) | 逻辑说明与系统依赖 (Dependencies) |
+| :--- | :--- | :--- | :--- |
+| **加/扣金币** | `Gold:数量` | `Gold:500` | 负数即为扣钱。直接操作 GameManager.Player.Gold。 |
+| **给物品/装备**| `Item:文件名` | `Item:Item_Potion_HP` | 发放道具。目标必须存在于 `Resources/Items/` 下。 |
+| **加经验** | `Exp:数量` | `Exp:100` | 给予经验。仅上阵存活角色可获得。 |
+| **加/扣精力** | `Stamina:数量` | `Stamina:-5` | 负数扣除，正数恢复。常用于交互消耗。 |
+| **全恢复** | `Heal` | `Heal` | (无Value参数) 瞬间回满主角的 HP/MP/Stamina。 |
+| **单体战斗** | `Battle:敌人ID` | `Battle:Enemy_Slime` | 触发普通战斗。需确保存在 `Resources/Enemies/`。 |
+| **阵列关卡** | `Stage:关卡ID` | `Stage:Stage_Forest01`| 触发多敌人阵列战斗。需确保存在 `Resources/Stages/`。 |
+| **打开商店** | `Shop:商店ID` | `Shop:Shop_Village` | 强制结束对话并弹出商店。需存在 `Resources/Shops/`。 |
+| **强制接取任务**| `AcceptQuest:任务ID` | `AcceptQuest:Q_KillSlime` | 强制玩家接取指定 QuestData。 |
+| **强制提交任务**| `SubmitQuest:任务ID` | `SubmitQuest:Q_KillSlime` | 仅当该任务满足条件 (Completed) 时生效并发放奖励。 |
+| **推进对话目标**| `Report:目标ID` | `Report:Village_Head` | 广播通知：“我和村长谈过了”。推进 Talk 类型的任务进度。 |
+| **⭐ 招募队友** | `JoinParty:角色ID` | `JoinParty:Player_Lilith` | 新增。加入队伍/冷板凳。需存在 `Resources/Characters/`。 |
+| **⭐ 角色离队** | `LeaveParty:角色ID` | `LeaveParty:Player_Lilith` | 新增。永久离队。自动卸下该角色全身装备并退回公共背包！ |
+| **触发剧情记忆**| `Finish:事件ID` | `Finish:TalkedToKing` | 写入一次性事件记忆 (EventMemory)。用于控制分支。 |

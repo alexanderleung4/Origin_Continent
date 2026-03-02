@@ -16,13 +16,19 @@ MonoBehaviour:
   lines:
   - speakerName: "\u9732\u5A1C"
     content: "\u6B22\u8FCE\u56DE\u6765\uFF0C\u4E3B\u4EBA\uFF01\u4ECA\u5929\u60F3\u5148\u5403\u996D\u8FD8\u662F\u5148\u6D17\u6FA1\uFF1F"
+    expression: 
+    backgroundID: 
     portrait: {fileID: 21300000, guid: 2ff72fb7c51e4c84f90f961093913214, type: 3}
     eventCommand: 
   - speakerName: Player
     content: "\u5148\u4F11\u606F\u4E00\u4F1A\u513F\u5427\u3002"
+    expression: 
+    backgroundID: 
     portrait: {fileID: 21300000, guid: 2fddc2ca63721084590d7dd3fb0aa1a8, type: 3}
     eventCommand: 
   - speakerName: "\u9732\u5A1C"
     content: "\u597D\u7684\uFF0C\u7A0D\u5FAE\u7B49\u6211\u4E00\u4E0B\u54E6\u3002"
+    expression: 
+    backgroundID: 
     portrait: {fileID: 21300000, guid: 2ff72fb7c51e4c84f90f961093913214, type: 3}
-    eventCommand: 
+    eventCommand: JoinParty:NPC_Luna

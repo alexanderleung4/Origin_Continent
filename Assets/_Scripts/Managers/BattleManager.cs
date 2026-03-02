@@ -131,16 +131,15 @@ public class BattleManager : MonoBehaviour
         // 阵列排布预设：主角固定放1号位(前排中)，队友依次放 0(前排上), 2(前排下), 4(后排中), 3, 5
         int[] posLayout = { 1, 0, 2, 4, 3, 5 };
         
-        if (GameManager.Instance != null && GameManager.Instance.activeParty != null)
+        if (GameManager.Instance != null && GameManager.Instance.activeFormation != null)
         {
-            for (int i = 0; i < GameManager.Instance.activeParty.Count; i++)
+            for (int i = 0; i < 6; i++)
             {
-                RuntimeCharacter member = GameManager.Instance.activeParty[i];
+                RuntimeCharacter member = GameManager.Instance.activeFormation[i];
                 if (member != null)
                 {
-                    // 防止小队人数超过格子数
-                    int slot = i < posLayout.Length ? posLayout[i] : i; 
-                    SpawnEntity(member, true, slot);
+                    // 神奇的魔法：GameManager 里是几号槽，物理战场上就是几号槽！
+                    SpawnEntity(member, true, i);
                 }
             }
         }

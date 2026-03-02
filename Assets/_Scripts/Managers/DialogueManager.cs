@@ -362,7 +362,24 @@ public class DialogueManager : MonoBehaviour
                 break;
             case "Report": 
                  QuestManager.Instance.OnNPCInteracted(value);
-                break;        
+                break;
+            // ==========================================
+            // 👇 新增: 人事调动指令 (Recruitment & Roster)
+            // ==========================================
+            case "JoinParty":
+                if (GameManager.Instance != null) 
+                {
+                    GameManager.Instance.RecruitCharacter(value);
+                }
+                break;
+                
+            case "LeaveParty":
+                if (GameManager.Instance != null) 
+                {
+                    GameManager.Instance.LeaveParty(value);
+                }
+                break;
+                
         }
 
         if (UIManager.Instance != null) UIManager.Instance.RefreshPlayerStatus();

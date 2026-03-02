@@ -271,7 +271,7 @@ public class RuntimeCharacter
         if (Level >= data.maxLevel) return;
 
         CurrentExp += amount;
-        Debug.Log($"[Growth] 获得经验: {amount}, 当前总经验: {CurrentExp}");
+        Debug.Log($"[Growth] {Name} 获得经验: {amount}, 当前总经验: {CurrentExp}");
 
         // 检查升级 (循环支持一次升多级)
         // 下一级所需经验 > 当前经验 ?
@@ -280,11 +280,19 @@ public class RuntimeCharacter
             LevelUp();
         }
 
-        if (Level > startLevel && GameManager.Instance != null && GameManager.Instance.Player != null && GameManager.Instance.Player == this && UI_SystemToast.Instance != null)
+        // 👇 核心修复：移除“仅限主角”的判定！只要升级了，全员皆可播报！
+        if (Level > startLevel && UI_SystemToast.Instance != null)
         {
             int levelsGained = Level - startLevel;
-            string prefix = levelsGained > 1 ? "连升多级！当前: Lv." : "升级啦！当前: Lv.";
-            UI_SystemToast.Instance.Show("LevelUp", $"{prefix}{Level}", 0, null);
+            
+            // 文本拼接：带上角色真名
+            string prefix = levelsGained > 1 ? $"【{Name}】连升多级！当前: Lv." : $"【{Name}】升级啦！当前: Lv.";
+            
+            // 聚合码拼接：用角色的专属 ID 作为 mergeID，防止不同角色同时升级时提示框互相覆盖
+            string uniqueMergeID = $"LevelUp_{data.characterID}";
+            
+            // 呼出带头像的播报
+            UI_SystemToast.Instance.Show(uniqueMergeID, $"{prefix}{Level}", 0, data.portrait);
         }
     }
 

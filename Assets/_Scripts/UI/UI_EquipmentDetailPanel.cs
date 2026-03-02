@@ -129,7 +129,8 @@ public class UI_EquipmentDetailPanel : MonoBehaviour
                 // 1. 如果是从主界面的大背包点开的，问玩家给谁穿！
                 if (UI_TargetSelector.Instance != null)
                 {
-                    UI_TargetSelector.Instance.OpenSelector($"请选择穿戴者：\n{currentEquip.itemName}", (selectedTarget) => 
+                    
+                    UI_TargetSelector.Instance.OpenSelector($"请选择穿戴者：\n{currentEquip.itemName}", AvatarDisplayMode.NameOnly, (selectedTarget) => 
                     {
                         InventoryManager.Instance.EquipItemLogic(currentEquip, selectedTarget);
                         ClosePanel(); // 穿好后关闭详情面板

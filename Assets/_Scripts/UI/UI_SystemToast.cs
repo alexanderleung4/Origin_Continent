@@ -23,14 +23,17 @@ public class UI_SystemToast : MonoBehaviour
     public TextMeshProUGUI toastText;
 
     [Header("Animation Settings")]
-    public float displayDuration = 2.0f; // 悬停时间
-    public float fadeDuration = 0.3f;    // 淡入淡出时间
-    public float slideOffset = 50f;      // 从上方多少像素滑下来
+    public float displayDuration = 2.0f; 
+    public float fadeDuration = 0.3f;    
+    public float slideOffset = 50f;      
 
     private List<ToastMessage> messageQueue = new List<ToastMessage>();
     private ToastMessage currentMessage = null;
     private float currentTimer = 0f;
     private bool isPlaying = false;
+    
+    // 👇 新增：跳过标记
+    private bool skipRequested = false;
 
     private void Awake()
     {
@@ -41,19 +44,26 @@ public class UI_SystemToast : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    // --- 全局静态调用接口 ---
+    // 👇 新增：全局监听玩家点击
+    private void Update()
+    {
+        // 如果正在播报，且玩家点击了鼠标左键（或者按了任意键），立刻请求跳过当前播报！
+        if (isPlaying && (Input.GetMouseButtonDown(0) || Input.anyKeyDown))
+        {
+            skipRequested = true;
+        }
+    }
+
     public void Show(string mergeID, string prefix, int amount = 0, Sprite icon = null)
     {
-        // 1. 如果正在播报的就是这个类型，直接聚合数值！
         if (isPlaying && currentMessage != null && currentMessage.mergeID == mergeID && !string.IsNullOrEmpty(mergeID))
         {
             currentMessage.amount += amount;
             UpdateUI(currentMessage);
-            currentTimer = displayDuration; // 重置停留时间
+            currentTimer = displayDuration; 
             return;
         }
 
-        // 2. 检查队列里有没有还没播出来的同类项
         ToastMessage queuedMsg = messageQueue.Find(m => m.mergeID == mergeID && !string.IsNullOrEmpty(mergeID));
         if (queuedMsg != null)
         {
@@ -61,13 +71,12 @@ public class UI_SystemToast : MonoBehaviour
             return;
         }
 
-        // 3. 作为全新的播报加入队列
         ToastMessage newMsg = new ToastMessage { mergeID = mergeID, prefixText = prefix, amount = amount, icon = icon };
         messageQueue.Add(newMsg);
 
         if (!isPlaying)
         {
-            gameObject.SetActive(true); // 必须在启动协程前激活物体
+            gameObject.SetActive(true); 
             StartCoroutine(PlayQueue());
         }
     }
@@ -83,11 +92,10 @@ public class UI_SystemToast : MonoBehaviour
             }
             else
             {
-                iconImage.gameObject.SetActive(false); // 没有图标自动隐藏，LayoutGroup会自动排版
+                iconImage.gameObject.SetActive(false); 
             }
         }
 
-        // 文本拼装：如果有数量，就拼接 "+数量"，否则只显示文本
         if (msg.amount > 0)
             toastText.text = $"{msg.prefixText} +{msg.amount}";
         else
@@ -103,6 +111,7 @@ public class UI_SystemToast : MonoBehaviour
         {
             currentMessage = messageQueue[0];
             messageQueue.RemoveAt(0);
+            skipRequested = false; // 每次拿新消息时重置跳过标记
 
             UpdateUI(currentMessage);
 
@@ -113,6 +122,9 @@ public class UI_SystemToast : MonoBehaviour
 
             while (t < fadeDuration)
             {
+                // 👇 核心打断：如果玩家点击了，瞬间完成滑入！
+                if (skipRequested) break; 
+
                 t += Time.deltaTime;
                 if (canvasGroup != null) canvasGroup.alpha = t / fadeDuration;
                 panelRect.anchoredPosition = Vector2.Lerp(startPos, endPos, t / fadeDuration);
@@ -125,11 +137,16 @@ public class UI_SystemToast : MonoBehaviour
             currentTimer = displayDuration;
             while (currentTimer > 0)
             {
-                currentTimer -= Time.deltaTime; // 期间如果外部调了 Show() 并触发聚合，currentTimer 会被重置
+                // 👇 核心打断：如果玩家点击了，瞬间结束悬停！
+                if (skipRequested) break;
+
+                currentTimer -= Time.deltaTime; 
                 yield return null;
             }
 
             // --- 阶段3：淡出上滑 (Fade Out & Slide Up) ---
+            // 淡出时不建议打断，不然画面会突兀闪烁，保留原本的 0.3 秒顺滑离场
+            skipRequested = false; 
             t = 0;
             while (t < fadeDuration)
             {
@@ -146,16 +163,9 @@ public class UI_SystemToast : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    // --- 调试用 (右键组件菜单可调用) ---
     [ContextMenu("Test: 拾取 100 金币 (测试聚合)")]
-    public void TestAddGold()
-    {
-        Show("Gold", "获得金币:", 100, null);
-    }
+    public void TestAddGold() { Show("Gold", "获得金币:", 100, null); }
 
     [ContextMenu("Test: 获得 1 把生锈的铁剑 (测试排队)")]
-    public void TestAddItem()
-    {
-        Show("Weapon_RustSword", "获得物品: 生锈的铁剑", 1, null);
-    }
+    public void TestAddItem() { Show("Weapon_RustSword", "获得物品: 生锈的铁剑", 1, null); }
 }

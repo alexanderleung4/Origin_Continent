@@ -106,7 +106,8 @@ public class InventoryManager : MonoBehaviour
                 // 👇 核心改动：呼叫目标选择器！问玩家这药喂给谁！
                 if (UI_TargetSelector.Instance != null)
                 {
-                    UI_TargetSelector.Instance.OpenSelector($"请选择目标：\n使用 {item.itemName}", (selectedTarget) => 
+                    
+                    UI_TargetSelector.Instance.OpenSelector($"请选择目标：\n使用 {item.itemName}", AvatarDisplayMode.FullStats, (selectedTarget) => 
                     {
                         ApplyItemEffect(selectedTarget, item);
                         ConsumeItem(item);
@@ -132,9 +133,11 @@ public class InventoryManager : MonoBehaviour
             else
             {
                 // 保底逻辑：如果详情UI坏了，直接呼叫目标选择器盲穿！
+                
                 if (UI_TargetSelector.Instance != null)
                 {
-                    UI_TargetSelector.Instance.OpenSelector($"请选择穿戴者：\n{equipData.itemName}", (selectedTarget) => 
+                    
+                    UI_TargetSelector.Instance.OpenSelector($"请选择穿戴者：\n{equipData.itemName}", AvatarDisplayMode.NameOnly,(selectedTarget) => 
                     {
                         EquipItemLogic(equipData, selectedTarget);
                     });

@@ -36,16 +36,16 @@ public class UI_TargetSelector : MonoBehaviour
     /// </summary>
     /// <param name="title">提示文字，例如 "给谁使用？" 或 "谁来穿戴？"</param>
     /// <param name="callback">玩家点击头像后执行的逻辑</param>
-    public void OpenSelector(string title, System.Action<RuntimeCharacter> callback)
+    public void OpenSelector(string title, AvatarDisplayMode mode, System.Action<RuntimeCharacter> callback)
     {
         onTargetSelectedCallback = callback;
         if (titleText != null) titleText.text = title;
         
         panelRoot.SetActive(true);
-        RefreshList();
+        RefreshList(mode); // 传给刷新列表
     }
 
-    private void RefreshList()
+    private void RefreshList(AvatarDisplayMode mode)
     {
         foreach (Transform child in gridContainer) Destroy(child.gameObject);
 
@@ -58,31 +58,19 @@ public class UI_TargetSelector : MonoBehaviour
 
             GameObject go = Instantiate(avatarPrefab, gridContainer);
             
-            // 自动寻找立绘 Image
-            Image img = go.GetComponent<Image>();
-            if (img == null) img = go.transform.Find("Image_Portrait")?.GetComponent<Image>();
-            if (img == null) img = go.transform.Find("Icon")?.GetComponent<Image>();
-            if (img != null && member.data.portrait != null) img.sprite = member.data.portrait;
-
-            // 自动寻找名字 Text
-            TextMeshProUGUI nameTxt = go.transform.Find("Text_Name")?.GetComponent<TextMeshProUGUI>();
-            if (nameTxt != null) nameTxt.text = member.Name;
-
-            // 自动寻找血条显示 (方便吃药时看谁残血)
-            TextMeshProUGUI hpTxt = go.transform.Find("Text_HP")?.GetComponent<TextMeshProUGUI>();
-            if (hpTxt != null) hpTxt.text = $"HP: {member.CurrentHP}/{member.MaxHP}";
-
-            // 绑定核心点击事件
-            Button btn = go.GetComponent<Button>();
-            if (btn == null) btn = go.AddComponent<Button>();
-            
-            btn.onClick.AddListener(() => 
+            UI_RosterAvatar avatarUI = go.GetComponent<UI_RosterAvatar>();
+            if (avatarUI != null)
             {
-                // 执行之前存好的逻辑 (比如吃药、穿装备)
-                onTargetSelectedCallback?.Invoke(member);
-                // 完事后自动关闭
-                ClosePanel();
-            });
+                avatarUI.Setup(member, mode, (selectedChar) => 
+                {
+                    onTargetSelectedCallback?.Invoke(selectedChar);
+                    ClosePanel();
+                });
+            }
+            else
+            {
+                Debug.LogError("[UI_TargetSelector] 你的 avatarPrefab 上没有挂载 UI_RosterAvatar 脚本！");
+            }
         }
     }
 

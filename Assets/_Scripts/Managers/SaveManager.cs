@@ -105,9 +105,13 @@ public class SaveManager : MonoBehaviour
         // ==========================================
         data.roster = new List<PlayerSaveData>();
         data.activePartyIDs = new List<string>();
+        // 建立一个全员大名单 (首发 + 替补)
+        List<RuntimeCharacter> allMembersToSave = new List<RuntimeCharacter>();
+        allMembersToSave.AddRange(GameManager.Instance.activeParty);
+        allMembersToSave.AddRange(GameManager.Instance.reserveParty);
 
-        // 遍历当前出战队伍（未来做板凳席后，这里要遍历 GameManager.unlockedCharacters 的实例）
-        foreach (var member in GameManager.Instance.activeParty)
+        // 遍历当前出战队伍
+        foreach (var member in allMembersToSave)
         {
             if (member == null || member.data == null) continue;
             
@@ -138,6 +142,12 @@ public class SaveManager : MonoBehaviour
 
             data.roster.Add(pData);
             data.activePartyIDs.Add(member.data.characterID); // 记录站位顺序
+        }
+        // 在 foreach 结束后，精确记录 6 宫格的站位密码！
+        for (int i = 0; i < 6; i++)
+        {
+            var m = GameManager.Instance.activeFormation[i];
+            data.activePartyIDs.Add(m != null ? m.data.characterID : ""); // 空位存为空字符串
         }
 
         // 3. World
@@ -249,16 +259,26 @@ public class SaveManager : MonoBehaviour
             }
         }
 
-        // 按存档里的出战顺序，把角色塞回 activeParty 阵列
+        // 按存档里的 6 宫格密码，把角色精准插回沙盘！
+        GameManager.Instance.activeFormation = new RuntimeCharacter[6];
         if (data.activePartyIDs != null)
         {
-            foreach (var id in data.activePartyIDs)
+            for (int i = 0; i < 6 && i < data.activePartyIDs.Count; i++)
             {
-                if (loadedCharacters.ContainsKey(id))
+                string id = data.activePartyIDs[i];
+                if (!string.IsNullOrEmpty(id) && loadedCharacters.ContainsKey(id))
                 {
-                    GameManager.Instance.activeParty.Add(loadedCharacters[id]);
+                    GameManager.Instance.activeFormation[i] = loadedCharacters[id];
+                    loadedCharacters.Remove(id); // 放上场的，从临时字典里踢掉
                 }
             }
+        }
+
+        // 剩下没上场的，统统塞进冷板凳！
+        GameManager.Instance.reserveParty.Clear();
+        foreach (var remaining in loadedCharacters.Values)
+        {
+            GameManager.Instance.reserveParty.Add(remaining);
         }
 
         // 2. World

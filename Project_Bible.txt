@@ -36,6 +36,8 @@
 * UI_DifficultyToggle (难度全局切换挂件)
 * Interactable_RestPoint (休眠点恢复与时间推进)
 * UI_TraitSlot (特质徽章神经末梢)
+* UI_EquipmentSelector (逆向装备筛选模态窗)
+* UI_TargetSelector (全境目标选择模态窗)
 
 ### 📁 Utils (底层工具)
 * AutoDestroy, CSVLoader。
@@ -133,3 +135,7 @@
   * 从 Inventory 打开 -> 显示【装备】按钮，隐藏卸下。
   * 从 CharacterSheet 打开 -> 显示【卸下】按钮，并精准读取 RuntimeCharacter 的真实受损耐久度。
 * **悬浮末梢:** 物品格统一挂载 `UI_TooltipTrigger`，读取 `ItemData.itemName` 提供极简黑条提示。
+
+### 🎛️ 焦点劫持与模态拦截协议 (Focus Hijacking & Modal Protocol)
+* 焦点唯一性: 所有针对角色的养成操作（加点、看详情），必须读取 `UI_CharacterSheet.Instance.CurrentFocusCharacter`，严禁硬编码 `GameManager.Instance.Player`。
+* 盲操拦截: 只要系统无法通过上下文判断道具/装备的受益人（如：从大背包直接点击使用），必须强制呼出 `UI_TargetSelector` 模态窗，将选择权交还给玩家。

@@ -211,12 +211,12 @@ public class UI_CharacterSheet : MonoBehaviour
         {
             if (member == null || member.data == null) continue;
             GameObject go = Instantiate(rosterAvatarPrefab, rosterContainer);
-            Image img = go.GetComponent<Image>();
-            if (img == null) img = go.transform.Find("Icon")?.GetComponent<Image>();
-            if (img != null && member.data.portrait != null) img.sprite = member.data.portrait;
-
-            Button btn = go.GetComponent<Button>();
-            if (btn != null) btn.onClick.AddListener(() => SetFocusCharacter(member));
+           UI_RosterAvatar avatarUI = go.GetComponent<UI_RosterAvatar>();
+            if (avatarUI != null)
+            {
+                // 侧边栏只需要极简模式！
+                avatarUI.Setup(member, AvatarDisplayMode.Minimal, SetFocusCharacter);
+            }
         }
     }
     // ==========================================
