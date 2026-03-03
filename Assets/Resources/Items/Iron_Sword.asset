@@ -25,6 +25,7 @@ MonoBehaviour:
   healAmount: 0
   manaAmount: 0
   staminaAmount: 0
+  feedExpValue: 20
   slotType: 0
   baseDamage: 20
   baseDefense: 0
@@ -36,3 +37,6 @@ MonoBehaviour:
     type: 1
     value: 5
   possibleAffixes: 030000000600000007000000
+  salvageRewards:
+  - item: {fileID: 11400000, guid: 3fd27c5886e46c849a968c9af0baf225, type: 2}
+    amount: 1

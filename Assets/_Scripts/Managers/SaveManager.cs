@@ -90,8 +90,15 @@ public class SaveManager : MonoBehaviour
 
             pData.equipment = new List<EquipmentEntry>();
             foreach (var kvp in member.equipment)
-                // 👇 修复点 1：读取肉身内部的蓝图名字
-                if (kvp.Value != null) pData.equipment.Add(new EquipmentEntry(kvp.Key, kvp.Value.blueprint.name));
+            {
+                if (kvp.Value != null)
+                {
+                    EquipmentEntry newEntry = new EquipmentEntry(kvp.Key, kvp.Value.blueprint.name);
+                    // 👇 核心修复 1：序列化身上的实体装备
+                    newEntry.equipData = SerializeEquipment(kvp.Value);
+                    pData.equipment.Add(newEntry);
+                }
+            }
 
             data.roster.Add(pData);
             data.activePartyIDs.Add(member.data.characterID); 
@@ -110,8 +117,19 @@ public class SaveManager : MonoBehaviour
         if (InventoryManager.Instance != null)
         {
             foreach (var slot in InventoryManager.Instance.inventory)
-                if (slot.itemData != null)
+            {
+                if (slot.equipmentInstance != null)
+                {
+                    // 👇 核心修复 2：背包里的神锻装备不再退化为白板材料
+                    InventorySaveData invData = new InventorySaveData { itemID = slot.equipmentInstance.blueprint.name, amount = slot.amount };
+                    invData.equipData = SerializeEquipment(slot.equipmentInstance);
+                    data.inventory.Add(invData);
+                }
+                else if (slot.itemData != null)
+                {
                     data.inventory.Add(new InventorySaveData { itemID = slot.itemData.name, amount = slot.amount });
+                }
+            }
         }
 
         data.activeQuests = new List<QuestSaveData>();
@@ -182,9 +200,18 @@ public class SaveManager : MonoBehaviour
                 {
                     foreach (var entry in pData.equipment)
                     {
-                        EquipmentData equip = Resources.Load<EquipmentData>($"Items/{entry.itemID}");
-                        // 👇 修复点 2：将图纸重新捏造成肉身实例 (暂时赋予普通品质)
-                        if (equip != null) rc.equipment.Add(entry.slot, new RuntimeEquipment(equip, EquipmentRarity.Common));
+                        // 👇 核心修复 3：精准还原身上的肉身，兼容老版本旧档
+                        if (entry.equipData != null && !string.IsNullOrEmpty(entry.equipData.uid))
+                        {
+                            RuntimeEquipment restoredEquip = DeserializeEquipment(entry.equipData);
+                            if (restoredEquip != null) rc.equipment.Add(entry.slot, restoredEquip);
+                        }
+                        else
+                        {
+                            // 兼容以前只存了 itemID 的老存档
+                            EquipmentData equip = Resources.Load<EquipmentData>($"Items/{entry.itemID}");
+                            if (equip != null) rc.equipment.Add(entry.slot, new RuntimeEquipment(equip, EquipmentRarity.Common));
+                        }
                     }
                 }
 
@@ -224,8 +251,21 @@ public class SaveManager : MonoBehaviour
             InventoryManager.Instance.inventory.Clear();
             foreach(var invData in data.inventory)
             {
-                ItemData item = Resources.Load<ItemData>($"Items/{invData.itemID}");
-                if (item != null) InventoryManager.Instance.AddItem(item, invData.amount);
+                // 👇 核心修复 4：还原背包内的实体装备
+                if (invData.equipData != null && !string.IsNullOrEmpty(invData.equipData.uid))
+                {
+                    RuntimeEquipment restoredEquip = DeserializeEquipment(invData.equipData);
+                    if (restoredEquip != null) 
+                    {
+                        // 这里调用专属于实体的 AddItem (带有 isSilent=true 防止读档疯狂弹窗)
+                        InventoryManager.Instance.AddItem(restoredEquip, 1, true); 
+                    }
+                }
+                else
+                {
+                    ItemData item = Resources.Load<ItemData>($"Items/{invData.itemID}");
+                    if (item != null) InventoryManager.Instance.AddItem(item, invData.amount);
+                }
             }
         }
 
@@ -251,7 +291,6 @@ public class SaveManager : MonoBehaviour
         Debug.Log($"[Load] 读档完成。");
         if(UIManager.Instance != null) UIManager.Instance.RefreshPlayerStatus();
         if(UI_SaveMenu.Instance != null) UI_SaveMenu.Instance.CloseMenu();
-        if (UIManager.Instance != null) UIManager.Instance.RefreshPlayerStatus();
         Debug.Log($"[SaveManager] 存档 {saveID} 读取完毕，UI 已刷新。");
     }
 
@@ -311,4 +350,43 @@ public class SaveManager : MonoBehaviour
     }
 
     [ContextMenu("Open Folder")] public void OpenSaveFolder() => Application.OpenURL(Application.persistentDataPath);
+
+    // ==========================================
+    // 👇 新增：装备肉身转换工具组
+    // ==========================================
+    private RuntimeEquipmentSaveData SerializeEquipment(RuntimeEquipment equip)
+    {
+        if (equip == null || equip.blueprint == null) return null;
+        return new RuntimeEquipmentSaveData
+        {
+            uid = equip.uid,
+            blueprintID = equip.blueprint.name,
+            level = equip.level,
+            currentExp = equip.currentExp,
+            rarity = (int)equip.rarity,
+            currentDurability = equip.currentDurability,
+            affixes = new List<ItemAffix>(equip.affixes) // 深度拷贝词条列表
+        };
+    }
+
+    private RuntimeEquipment DeserializeEquipment(RuntimeEquipmentSaveData save)
+    {
+        EquipmentData blueprint = Resources.Load<EquipmentData>($"Items/{save.blueprintID}");
+        if (blueprint == null) return null;
+
+        // 根据读取的品质生成肉身
+        RuntimeEquipment equip = new RuntimeEquipment(blueprint, (EquipmentRarity)save.rarity);
+        
+        // 覆盖还原具体数值
+        equip.uid = save.uid;
+        equip.level = save.level;
+        equip.currentExp = save.currentExp;
+        equip.currentDurability = save.currentDurability;
+        equip.affixes = save.affixes != null ? new List<ItemAffix>(save.affixes) : new List<ItemAffix>();
+        
+        // 强制重算乘区 (恢复原本在那个等级应有的白值)
+        equip.CalculateDynamicStats(); 
+        
+        return equip;
+    }
 }

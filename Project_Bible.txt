@@ -12,10 +12,12 @@
 ### 📁 Logic
 * RuntimeCharacter
 * GameEnums (包含 TeamType, GameDifficulty 等全局通用枚举)
+* RuntimeEquipment (装备实体肉身), ItemAffix (随机词条)
 
 ### 📁 Managers (全局单例与核心控制)
 * AudioManager, BattleManager, DialogueManager, GameManager, InventoryManager
 * QuestManager, SaveManager, SceneFader, ShopManager, TimeManager, VFXManager
+* ForgeManager (神锻与概率引擎)
 
 ### 📁 SaveSystem
 * SaveData (负责序列化落地的核心数据结构)
@@ -24,7 +26,7 @@
 * BuffData, CharacterData, DialogueData, EquipmentData, ItemData
 * LocationData, LootTable, QuestData, ShopData, SkillData, StageData
 * 🤖 子文件夹 AI: AI_Aggressive, AI_Pattern, AI_Smart, AIProfileBase
-* TraitData (被动特质配置表), TraitEffectBase (特殊被动逻辑基类), Effect_CurseDeath (满层暴毙插件)
+* TraitData (被动特质配置表), TraitEffectBase (特殊被动逻辑基类), Effect_CurseDeath (满层暴毙插件)，RecipeData (锻造配方)
 
 ### 📁 UI (视图层交互)
 * UI_Battle, UI_BattleEntity, UI_CharacterSheet, UI_CutIn, UI_Interaction
@@ -40,6 +42,7 @@
 * UI_TargetSelector (全境目标选择模态窗)
 * UI_Formation (营地六宫格战术编队沙盘)
 * UI_RosterAvatar (通用状态化头像组件，支持极简/名字/全状态三种 AvatarDisplayMode)
+* UI_Blacksmith, UI_RecipeSlot, UI_IngredientSlot
 
 ### 📁 Utils (底层工具)
 * AutoDestroy, CSVLoader。
@@ -96,6 +99,11 @@
 * 链式触发 (Chain Reaction): 任务的连环派发必须通过 `QuestData.nextQuest` 在 `SubmitQuest` 成功后自动执行 `AcceptQuest`，严禁在对话事件中连续手写硬编码接取。
 * 状态隔离 (Status Isolation): 任务状态以 `isAccepted`, `isCompleted`, `isSubmitted` 三个布尔值进行严格的生命周期阻断，防止多次领取奖励。
 * 记忆锚点 (Memory Anchor): 主线与支线任务在提交后，必须向 `GameManager.eventMemory` 写入一次性防重复锚点 (如 `Quest_xxx_Done`)，确保单档唯一性。
+
+### ⚔️ 神锻与武装脱壳协议 (Divine Forge & Armament Protocol)
+* 肉身法则 (Instance Rule): 装备数据分为图纸 (`EquipmentData`) 和实体 (`RuntimeEquipment`)。角色穿戴、背包存储、UI 详情展示必须且只能引用 `RuntimeEquipment`，严禁修改图纸静态数据。
+* 数值三层架构 (Stat Layers): 装备总属性 = 白值 (受品质/强化等级乘区放大) + 固有属性 (图纸死数值) + 随机词条 (锻造/掉落时概率生成的 Affixes)。
+* 经济回收 (Salvage Loop): 废弃装备严禁直接销毁，必须通过 `ForgeManager.SalvageEquipment` 进入回收管线，依品质倍率转化为基础材料，盘活系统熵值。
 
 ====================================================================
 ## 3. 极易混淆变量警示录 (Variable Blacklist/Whitelist)

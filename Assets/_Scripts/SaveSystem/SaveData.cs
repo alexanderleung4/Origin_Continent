@@ -83,6 +83,7 @@ public struct InventorySaveData
 {
     public string itemID; // 物品文件名 (e.g. "Item_Potion") [cite: 45]
     public int amount;    // 数量
+    public RuntimeEquipmentSaveData equipData;
 }
 
 // ===================================================================================
@@ -105,6 +106,25 @@ public struct EquipmentEntry
 {
     public EquipmentSlot slot;
     public string itemID; // 存文件名
+    public RuntimeEquipmentSaveData equipData; // 实体肉身数据
 
-    public EquipmentEntry(EquipmentSlot s, string id) { slot = s; itemID = id; }
+    // 在构造函数中补全 equipData 的默认初始化
+    public EquipmentEntry(EquipmentSlot s, string id) 
+    { 
+        slot = s; 
+        itemID = id; 
+        equipData = null; 
+    }
+}
+
+[System.Serializable]
+public class RuntimeEquipmentSaveData
+{
+    public string uid;
+    public string blueprintID;
+    public int level;
+    public int currentExp;
+    public int rarity; // 使用 int 存储枚举
+    public int currentDurability;
+    public List<ItemAffix> affixes;
 }

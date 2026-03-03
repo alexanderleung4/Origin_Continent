@@ -15,6 +15,12 @@ public class UI_Blacksmith : MonoBehaviour
     public Button closeButton;
     public TextMeshProUGUI playerGoldText; // 显示玩家当前金币
 
+    [Header("分页导航 (Tabs)")]
+    public Button btnTabForge;
+    public Button btnTabEnhance;
+    public GameObject pageForge;
+    public GameObject pageEnhance;
+
     [Header("左侧：配方列表 (Left: Recipe List)")]
     public Transform recipeListContainer;
     public GameObject recipeSlotPrefab;
@@ -45,6 +51,9 @@ public class UI_Blacksmith : MonoBehaviour
         ClosePanel();
         if (closeButton != null) closeButton.onClick.AddListener(ClosePanel);
         if (craftButton != null) craftButton.onClick.AddListener(OnCraftClicked);
+        // 绑定分页切换
+        if (btnTabForge != null) btnTabForge.onClick.AddListener(() => SwitchTab(true));
+        if (btnTabEnhance != null) btnTabEnhance.onClick.AddListener(() => SwitchTab(false));
     }
 
     // --- 调试热键 (按 B 打开铁匠铺) ---
@@ -63,6 +72,7 @@ public class UI_Blacksmith : MonoBehaviour
         panelRoot.SetActive(true);
         currentRecipe = null;
         if (previewPanel != null) previewPanel.SetActive(false); // 刚打开时右侧为空
+        SwitchTab(true); // 默认打开锻造分页
 
         RefreshRecipeList();
         UpdatePlayerGold();
@@ -73,11 +83,28 @@ public class UI_Blacksmith : MonoBehaviour
         panelRoot.SetActive(false);
     }
 
-    private void UpdatePlayerGold()
+    public void UpdatePlayerGold()
     {
         if (playerGoldText != null && GameManager.Instance != null)
         {
             playerGoldText.text = $"拥有金币: {GameManager.Instance.Player.Gold}";
+        }
+    }
+
+    private void SwitchTab(bool isForge)
+    {
+        if (pageForge != null) pageForge.SetActive(isForge);
+        if (pageEnhance != null) pageEnhance.SetActive(!isForge);
+        
+        if (isForge)
+        {
+            RefreshRecipeList();
+        }
+        else
+        {
+            // 通知强化面板刷新其自身状态
+            UI_EnhanceTab enhanceTab = pageEnhance.GetComponent<UI_EnhanceTab>();
+            if (enhanceTab != null) enhanceTab.OnTabOpened();
         }
     }
 

@@ -25,4 +25,7 @@ public class ItemData : ScriptableObject
     public int healAmount;      
     public int manaAmount;      
     public int staminaAmount;   
+    [Header("🔥 Enhancement (强化系统)")]
+    [Tooltip("作为强化狗粮时，提供给目标装备的基础经验值")]
+    public int feedExpValue = 10;
 }
