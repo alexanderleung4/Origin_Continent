@@ -186,6 +186,11 @@ public class BattleManager : MonoBehaviour
 
     private void SpawnEntity(RuntimeCharacter runtime, bool isPlayerSide, int slotIndex)
     {
+        // 👇 核心反僵尸防线：如果传进来的是空引用，或者没有 data 灵魂的僵尸，直接踢出去！
+        if (runtime == null || runtime.data == null) 
+        {
+            return;
+        }
         Transform[] slots = isPlayerSide ? ui.playerSlots : ui.enemySlots;
         if (slotIndex < 0 || slotIndex >= slots.Length || slots[slotIndex] == null) return;
 

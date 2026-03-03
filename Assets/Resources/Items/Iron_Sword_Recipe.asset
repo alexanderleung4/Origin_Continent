@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7dcc338e01958414d8ca54dddc46a204, type: 3}
+  m_Name: Iron_Sword_Recipe
+  m_EditorClassIdentifier: 
+  recipeID: Iron_Sword_Recipe
+  outputEquipment: {fileID: 11400000, guid: e74155e6036fd9742834400eef24d4e2, type: 2}
+  craftingCost: 100
+  ingredients:
+  - item: {fileID: 11400000, guid: 3fd27c5886e46c849a968c9af0baf225, type: 2}
+    amount: 2
+  isUnlockedByDefault: 1

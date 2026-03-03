@@ -11,17 +11,13 @@ public class UI_CharacterSheet : MonoBehaviour
     public GameObject panelRoot;
     public Button closeButton;
 
-    // ==========================================
-    // 👇 新增: 现代二游化分层导航 (Drill-down Navigation)
-    // ==========================================
     [Header("Drill-down Navigation (大厅与详情页)")]
-    public GameObject pageRoster;        // 第一层：名册大厅 (包含所有卡牌)
-    public GameObject pageDetail;        // 第二层：详情界面 (以前的老界面全塞这里)
-    public Button btnBackToRoster;       // 在详情页点击返回大厅的按钮
+    public GameObject pageRoster;        
+    public GameObject pageDetail;        
+    public Button btnBackToRoster;       
 
-    public Transform rosterGridContainer;// 第一层：挂载大卡牌的网格父节点
-    public GameObject rosterCardPrefab;  // 第一层：角色卡牌预制体
-    // ==========================================
+    public Transform rosterGridContainer;
+    public GameObject rosterCardPrefab;  
 
     [Header("Party Roster (详情页侧边快速切换栏)")]
     public Transform rosterContainer;        
@@ -79,8 +75,6 @@ public class UI_CharacterSheet : MonoBehaviour
     {
         CloseMenu();
         if (closeButton != null) closeButton.onClick.AddListener(CloseMenu);
-        
-        // 👇 新增：绑定返回大厅按钮
         if (btnBackToRoster != null) btnBackToRoster.onClick.AddListener(OpenRosterHall);
 
         if (InventoryManager.Instance != null)
@@ -115,44 +109,30 @@ public class UI_CharacterSheet : MonoBehaviour
             InventoryManager.Instance.OnInventoryChanged.RemoveListener(OnInventoryChanged);
     }
 
-    // ==========================================
-    // 🚪 核心导航逻辑：大厅 -> 详情
-    // ==========================================
     public void OpenMenu()
     {
         if (UIManager.Instance != null) UIManager.Instance.OnOpenPanel(); 
         panelRoot.SetActive(true);
-        OpenRosterHall(); // 每次打开，强制先看到选人大厅！
+        OpenRosterHall(); 
     }
 
-    public void CloseMenu()
-    {
-        panelRoot.SetActive(false);
-    }
+    public void CloseMenu() { panelRoot.SetActive(false); }
+    public void ToggleMenu() { if (panelRoot.activeSelf) CloseMenu(); else OpenMenu(); }
 
-    public void ToggleMenu()
-    {
-        if (panelRoot.activeSelf) CloseMenu(); else OpenMenu();
-    }
-
-    // 1. 开启选人大厅
     private void OpenRosterHall()
     {
         if (pageRoster) pageRoster.SetActive(true);
-        if (pageDetail) pageDetail.SetActive(false); // 隐藏深层详情
+        if (pageDetail) pageDetail.SetActive(false); 
         if (skillDetailPanel) skillDetailPanel.SetActive(false);
-
         RefreshRosterHall();
     }
 
-    // 2. 渲染大厅里的卡牌
     private void RefreshRosterHall()
     {
         if (rosterGridContainer == null || rosterCardPrefab == null) return;
-
         foreach (Transform child in rosterGridContainer) Destroy(child.gameObject);
 
-        var party = GameManager.Instance.activeParty; // 未来可改为 unlockedCharacters 展示冷板凳
+        var party = GameManager.Instance.activeParty; 
         if (party == null) return;
 
         foreach (var member in party)
@@ -161,9 +141,8 @@ public class UI_CharacterSheet : MonoBehaviour
 
             GameObject card = Instantiate(rosterCardPrefab, rosterGridContainer);
             
-            // 智能寻址：尝试找预制体上的立绘和名字组件
             Image img = card.transform.Find("Image_Portrait")?.GetComponent<Image>();
-            if (img == null) img = card.GetComponent<Image>(); // 兜底
+            if (img == null) img = card.GetComponent<Image>(); 
             if (img != null && member.data.portrait != null) img.sprite = member.data.portrait;
 
             TextMeshProUGUI nameTxt = card.transform.Find("Text_Name")?.GetComponent<TextMeshProUGUI>();
@@ -172,24 +151,21 @@ public class UI_CharacterSheet : MonoBehaviour
             TextMeshProUGUI lvTxt = card.transform.Find("Text_Level")?.GetComponent<TextMeshProUGUI>();
             if (lvTxt != null) lvTxt.text = $"Lv.{member.Level}";
 
-            // 绑定点击事件：下钻到详情页
             Button btn = card.GetComponent<Button>();
             if (btn != null) btn.onClick.AddListener(() => OpenDetail(member));
         }
     }
 
-    // 3. 点击卡牌，进入角色详情！
     private void OpenDetail(RuntimeCharacter target)
     {
         if (pageRoster) pageRoster.SetActive(false);
         if (pageDetail) pageDetail.SetActive(true);
 
         SetFocusCharacter(target);
-        RefreshSideRosterUI(); // 渲染详情页左侧的快速切换小头像
-        SwitchTab(true);       // 默认打开属性页
+        RefreshSideRosterUI(); 
+        SwitchTab(true);       
     }
 
-    // 详情页内部的切人逻辑
     public void SetFocusCharacter(RuntimeCharacter target)
     {
         if (target == null) return;
@@ -199,7 +175,6 @@ public class UI_CharacterSheet : MonoBehaviour
         else RefreshSkills();
     }
 
-    // 渲染详情页的侧边小头像栏
     private void RefreshSideRosterUI()
     {
         if (rosterContainer == null || rosterAvatarPrefab == null) return;
@@ -214,12 +189,10 @@ public class UI_CharacterSheet : MonoBehaviour
            UI_RosterAvatar avatarUI = go.GetComponent<UI_RosterAvatar>();
             if (avatarUI != null)
             {
-                // 侧边栏只需要极简模式！
                 avatarUI.Setup(member, AvatarDisplayMode.Minimal, SetFocusCharacter);
             }
         }
     }
-    // ==========================================
 
     private void SwitchTab(bool showStatus)
     {
@@ -241,7 +214,6 @@ public class UI_CharacterSheet : MonoBehaviour
         }
     }
 
-    // --- Page 1: 属性刷新 ---
     public void RefreshUI()
     {
         var player = CurrentFocusCharacter; 
@@ -314,11 +286,12 @@ public class UI_CharacterSheet : MonoBehaviour
                 Button btn = equipmentSlots[index];
                 if (btn != null && btn.image != null)
                 {
-                    btn.image.sprite = kvp.Value.icon;
+                    // 👇 修复点 3 & 4：提取肉身内的 blueprint 来获取图标
+                    btn.image.sprite = kvp.Value.blueprint.icon;
                     btn.image.color = Color.white;
                     UI_TooltipTrigger tooltip = btn.GetComponent<UI_TooltipTrigger>();
                     if (tooltip == null) tooltip = btn.gameObject.AddComponent<UI_TooltipTrigger>();
-                    tooltip.currentItem = kvp.Value;
+                    tooltip.currentItem = kvp.Value.blueprint;
                 }
             }
         }
@@ -337,7 +310,6 @@ public class UI_CharacterSheet : MonoBehaviour
         }
     }
 
-    // --- Page 2: 技能刷新 ---
     public void RefreshSkills()
     {
         if (skillListContainer == null || skillSlotPrefab == null) return;
@@ -472,10 +444,10 @@ public class UI_CharacterSheet : MonoBehaviour
         EquipmentSlot slot = GetSlotByIndex(index);
         var player = CurrentFocusCharacter; 
         
-        // 如果有装备，弹详情面板；如果没有装备，我们在刀法 2 中再接入 UI_EquipmentSelector！
         if (player.equipment.ContainsKey(slot)) 
         { 
-            EquipmentData equip = player.equipment[slot];
+            // 👇 修复点 5：正确提取实体肉身
+            RuntimeEquipment equip = player.equipment[slot];
             if (UI_EquipmentDetailPanel.Instance != null)
             {
                 UI_EquipmentDetailPanel.Instance.OpenPanel(equip, EquipmentPanelSource.CharacterSheet);

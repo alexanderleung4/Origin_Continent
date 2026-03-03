@@ -78,7 +78,7 @@ public class GameManager : MonoBehaviour
                 if (Player.data == null && playerTemplate != null) Player.data = playerTemplate;
 
                 UIManager.Instance.RefreshPlayerStatus();
-                Debug.Log("[GameManager] 延迟刷新 UI 完成 (白头像修复)");
+                
             }
         }
     }
@@ -132,8 +132,14 @@ public class GameManager : MonoBehaviour
         get 
         {
             List<RuntimeCharacter> list = new List<RuntimeCharacter>();
+            if (activeFormation == null) return list; 
+            
             for(int i = 0; i < 6; i++) {
-                if (activeFormation[i] != null) list.Add(activeFormation[i]);
+                // 👇 核心防御：只有肉身存在，且 data(灵魂) 也存在的，才算真正的活人！
+                if (activeFormation[i] != null && activeFormation[i].data != null) 
+                {
+                    list.Add(activeFormation[i]);
+                }
             }
             return list;
         }
@@ -144,9 +150,13 @@ public class GameManager : MonoBehaviour
     {
         get 
         {
+            // 🛡️ 防爆盾 2
+            if (activeFormation == null) return null; 
             if (playerTemplate == null) return activeParty.Count > 0 ? activeParty[0] : null;
+            
             foreach(var c in activeFormation) {
-                if (c != null && c.data.characterID == playerTemplate.characterID) return c;
+                // 🛡️ 防爆盾 3：极其严格地检查 c.data 是否存在，防止查户口时报错！
+                if (c != null && c.data != null && c.data.characterID == playerTemplate.characterID) return c;
             }
             return activeParty.Count > 0 ? activeParty[0] : null;
         }
@@ -495,7 +505,7 @@ public class GameManager : MonoBehaviour
             List<EquipmentSlot> slotsToStrip = new List<EquipmentSlot>(leaver.equipment.Keys);
             foreach (var slot in slotsToStrip)
             {
-                EquipmentData eq = leaver.Unequip(slot);
+                RuntimeEquipment eq = leaver.Unequip(slot);
                 // 静默塞回背包，不弹窗轰炸玩家
                 if (eq != null) InventoryManager.Instance.AddItem(eq, 1, true); 
             }

@@ -26,6 +26,11 @@ MonoBehaviour:
   manaAmount: 0
   staminaAmount: 0
   slotType: 3
+  baseDamage: 0
+  baseDefense: 0
+  baseMaxHP: 0
+  baseMaxMP: 0
+  maxDurability: 0
   modifiers:
   - statType: 5
     type: 0
@@ -33,8 +38,4 @@ MonoBehaviour:
   - statType: 0
     type: 0
     value: 20
-  baseDamage: 0
-  baseDefense: 0
-  baseMaxHP: 0
-  baseMaxMP: 0
-  maxDurability: 0
+  possibleAffixes: 

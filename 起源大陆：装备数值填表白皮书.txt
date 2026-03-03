@@ -1,0 +1,58 @@
+1. 关于“暴击”和“爆伤”怎么填？(Crit 数值法则)
+在我们的底层代码 total += mod.value / 100f 中，做了除以 100 的处理。
+结论：您在 Inspector 里填 1，就是 1%！填 15，就是 15%！
+
+疑问： 暴击率选 Flat (固定值) 还是 Percent (百分比)？
+
+解答： 对于暴击和爆伤，选哪个都一样。因为我们的代码对 Crit 类的结算直接无视了 ModifierType，统一当做“加法百分比”处理（即基础 5% + 装备 15% = 最终 20%）。建议填表时统一选 Flat，并在 value 里填整数（如 15）。
+
+2. 关于“攻击/防御/血量/速度”怎么填？(常规数值法则)
+常规属性的计算公式是极其严谨的：
+最终属性 = (白值 + Flat固定加成) * (1 + Percent百分比加成%)
+
+白值 (Base Stats): 填在 baseDamage, baseDefense 等独立框里的。注意：只有白值会吃“金紫蓝白”的品质放大乘区！
+
+Flat (固定值): 填在 modifiers 里。例如 Attack, Flat, 10。这把剑就额外多 10 点攻击，但这 10 点是死数值，不吃品质放大。
+
+Percent (百分比): 填在 modifiers 里。例如 Attack, Percent, 20。代表这把剑能让角色的总基础攻击力提升 20%！
+
+3. 武器设定实战演示 (How to craft an item)
+假设您要设计三把截然不同的武器，您在 Unity 的 EquipmentData 里应该这么填：
+
+⚔️ 案例 A：【新手的生锈铁剑】 (平庸的前期过渡品)
+
+Slot Type: Weapon
+
+Base Damage: 10 (白板 10 攻。如果摇出金色就是 20 攻)
+
+Modifiers: 空 (没有特殊加成)
+
+Possible Affixes: Attack, MaxHP (只能摇出加攻击和加血的词条)
+
+🗡️ 案例 B：【暗影刺客匕首】 (高爆发、高暴击，但基础攻击低)
+
+Slot Type: Weapon
+
+Base Damage: 5 (基础攻击很低)
+
+Modifiers (固有属性，必带):
+
+Speed, Flat, 15 (天生自带 15 点速度，刺客出手极快)
+
+CritRate, Flat, 10 (天生自带 10% 暴击率)
+
+Possible Affixes: CritRate, CritDamage, Speed (锻造时，只会在这三个极品刺客属性里随机！)
+
+🛡️ 案例 C：【狂战士的巨刃】 (舍弃防御，追求极致破坏力)
+
+Slot Type: Weapon
+
+Base Damage: 25 (基础面板极高！)
+
+Modifiers (固有属性):
+
+Attack, Percent, 15 (让角色的总攻击力再放大 15%！)
+
+Defense, Flat, -10 (负面词条：降低 10 点防御力)
+
+Possible Affixes: Attack, CritDamage

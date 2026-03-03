@@ -3,7 +3,6 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 
-// 👇 核心机制：定义头像组件的显示模式
 public enum AvatarDisplayMode 
 { 
     Minimal,    // 极简模式：只显示头像 (适合侧边栏快速切换)
@@ -18,11 +17,11 @@ public class UI_RosterAvatar : MonoBehaviour
     public Image portraitImage;
     
     [Header("动态元素 (根据模式显隐)")]
-    public GameObject nameContainer; // 名字的父节点(如果有底板的话)
+    public GameObject nameContainer; 
     public TextMeshProUGUI nameText;
 
     [Header("状态元素 (仅 FullStats 显示)")]
-    public GameObject statsRoot;     // 统管血条、蓝条的父节点
+    public GameObject statsRoot;     
     public Slider hpSlider;
     public TextMeshProUGUI hpText;
     public Slider mpSlider;
@@ -31,7 +30,13 @@ public class UI_RosterAvatar : MonoBehaviour
 
     private void Awake()
     {
-        btn = GetComponent<Button>();
+        InitializeComponents();
+    }
+
+    // 独立出初始化逻辑
+    private void InitializeComponents()
+    {
+        if (btn == null) btn = GetComponent<Button>();
     }
 
     /// <summary>
@@ -40,8 +45,18 @@ public class UI_RosterAvatar : MonoBehaviour
     public void Setup(RuntimeCharacter character, AvatarDisplayMode mode, Action<RuntimeCharacter> onClick)
     {
         if (character == null) return;
+        
+        // 🛡️ 防爆盾 1：强制执行初始化，应对 Instantiate 生命周期陷阱
+        InitializeComponents();
 
-        // 1. 设置头像 (所有模式都显示)
+        // 🛡️ 防爆盾 2：确保角色数据文件未丢失
+        if (character.data == null)
+        {
+            Debug.LogWarning($"[UI_RosterAvatar] 角色 {character.Name} 的配置数据丢失！");
+            return;
+        }
+
+        // 1. 设置头像
         if (portraitImage != null && character.data.portrait != null)
         {
             portraitImage.sprite = character.data.portrait;
@@ -64,13 +79,20 @@ public class UI_RosterAvatar : MonoBehaviour
 
         if (showStats)
         {
-            if (hpSlider != null) hpSlider.value = (float)character.CurrentHP / character.MaxHP;
-            if (hpText != null) hpText.text = $"HP: {character.CurrentHP}/{character.MaxHP}";
-            if (mpSlider != null) mpSlider.value = (float)character.CurrentMP / character.MaxMP;
+            // 防除零错误
+            int safeMaxHP = character.MaxHP > 0 ? character.MaxHP : 1;
+            int safeMaxMP = character.MaxMP > 0 ? character.MaxMP : 1;
+
+            if (hpSlider != null) hpSlider.value = (float)character.CurrentHP / safeMaxHP;
+            if (hpText != null) hpText.text = $"HP: {character.CurrentHP}/{safeMaxHP}";
+            if (mpSlider != null) mpSlider.value = (float)character.CurrentMP / safeMaxMP;
         }
 
-        // 4. 绑定点击回调 (极其优雅)
-        btn.onClick.RemoveAllListeners();
-        btn.onClick.AddListener(() => onClick?.Invoke(character));
+        // 4. 绑定点击回调 (增加判空防护)
+        if (btn != null)
+        {
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(() => onClick?.Invoke(character));
+        }
     }
 }

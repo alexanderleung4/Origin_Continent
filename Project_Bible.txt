@@ -38,6 +38,8 @@
 * UI_TraitSlot (特质徽章神经末梢)
 * UI_EquipmentSelector (逆向装备筛选模态窗)
 * UI_TargetSelector (全境目标选择模态窗)
+* UI_Formation (营地六宫格战术编队沙盘)
+* UI_RosterAvatar (通用状态化头像组件，支持极简/名字/全状态三种 AvatarDisplayMode)
 
 ### 📁 Utils (底层工具)
 * AutoDestroy, CSVLoader。
@@ -83,6 +85,17 @@
 ### 🧬 被动特质与状态协议 (Trait & Status Protocol)
 * 插件化隔离: 所有特殊的被动逻辑（如复活、满层暴毙、吸血）绝对禁止写死在 RuntimeCharacter 中。必须继承 TraitEffectBase 制作成 ScriptableObject 插件，并拖入 TraitData 的 Special Effects 列表中。
 * 跨天结算: 拥有期限的天数特质 (remainingDays) 统一由 GameManager 监听 TimeManager.OnDayChanged 事件后，向 Player 广播 TickTraits(1) 进行统一下发结算。
+
+### ⛺ 小队编制与战术沙盘协议 (Formation & Roster Protocol)
+* 战术六宫格 (The 6-Grid): `GameManager.activeFormation` 采用严格的长度为 6 的数组 (0,1,2 前排; 3,4,5 后排)，彻底取代动态 List。`BattleManager` 必须严格按照此索引生成物理战场实体。
+* 队长锁死定律 (Protagonist Lock): 无论是在 `UI_Formation` 编队界面，还是在 `LeaveParty` 剧情离队接口中，0号位（或模板指定的 Player）拥有绝对豁免权，严禁被移出沙盘或降级至冷板凳 (reserveParty)。
+* 万能组件化 (Component Reusability): 所有涉及展示角色头像的 UI (侧边栏、目标选择器、编队沙盘) 必须统一挂载 `UI_RosterAvatar`，通过枚举 `AvatarDisplayMode` 动态控制血条/名字的显隐，严禁使用 `transform.Find` 强行索取子节点。
+* 指名道姓播报 (Explicit Toast): 升级后的 `UI_SystemToast` 支持左键全局打断。`RuntimeCharacter.GainExp` 等多人并行结算逻辑，必须使用诸如 `LevelUp_CharacterID` 的独立 `mergeID`，防止播报互相吞没。
+
+### 📜 任务与世界线推进协议 (Quest & Progression Protocol)
+* 链式触发 (Chain Reaction): 任务的连环派发必须通过 `QuestData.nextQuest` 在 `SubmitQuest` 成功后自动执行 `AcceptQuest`，严禁在对话事件中连续手写硬编码接取。
+* 状态隔离 (Status Isolation): 任务状态以 `isAccepted`, `isCompleted`, `isSubmitted` 三个布尔值进行严格的生命周期阻断，防止多次领取奖励。
+* 记忆锚点 (Memory Anchor): 主线与支线任务在提交后，必须向 `GameManager.eventMemory` 写入一次性防重复锚点 (如 `Quest_xxx_Done`)，确保单档唯一性。
 
 ====================================================================
 ## 3. 极易混淆变量警示录 (Variable Blacklist/Whitelist)

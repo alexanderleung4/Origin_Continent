@@ -7,7 +7,15 @@ public class InventorySlot
 {
     public ItemData itemData;
     public int amount;
-    public InventorySlot(ItemData item, int count) { itemData = item; amount = count; }
+    public RuntimeEquipment equipmentInstance;
+    
+    public InventorySlot(ItemData item, int count, RuntimeEquipment equip = null) 
+    { 
+        itemData = item; 
+        amount = count; 
+        equipmentInstance = equip;
+    }
+    
     public void Add(int count) => amount += count;
     public void Remove(int count) => amount -= count;
 }
@@ -28,9 +36,24 @@ public class InventoryManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    // 默认获取物品逻辑
     public void AddItem(ItemData item, int count = 1, bool isSilent = false)
     {
         if (item == null) return;
+        if (item is EquipmentData equipBlueprint)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                RuntimeEquipment newEquip = new RuntimeEquipment(equipBlueprint, EquipmentRarity.Common);
+                inventory.Add(new InventorySlot(equipBlueprint, 1, newEquip));
+                Debug.Log($"[神锻] 装备实体化完成: {equipBlueprint.itemName} (UID: {newEquip.uid} | 攻击: {newEquip.DynamicDamage})");
+            }
+            
+            OnInventoryChanged?.Invoke();
+            if (!isSilent && UI_SystemToast.Instance != null) UI_SystemToast.Instance.Show(item.name, $"获得装备: {item.itemName}", count, item.icon);
+            return; 
+        }
+
         bool itemAdded = false;
         if (item.isStackable)
         {
@@ -38,47 +61,50 @@ public class InventoryManager : MonoBehaviour
             if (existingSlot != null) { existingSlot.Add(count); itemAdded = true; }
         }
         if (!itemAdded) inventory.Add(new InventorySlot(item, count));
-        Debug.Log($"[Inventory] 获得: {item.itemName} x{count}");
         OnInventoryChanged?.Invoke();
-        if (!isSilent && UI_SystemToast.Instance != null)
-        {
-            UI_SystemToast.Instance.Show(item.name, $"获得物品: {item.itemName}", count, item.icon);
-        }
+        if (!isSilent && UI_SystemToast.Instance != null) UI_SystemToast.Instance.Show(item.name, $"获得物品: {item.itemName}", count, item.icon);
     }
-    // --- 👇 新增: 卸下装备并放回背包 ---
+
+    // 👇 核心脱壳重载：用于卸下装备时，原封不动把“肉身”塞回背包
+    public void AddItem(RuntimeEquipment equip, int count = 1, bool isSilent = false)
+    {
+        if (equip == null) return;
+        inventory.Add(new InventorySlot(equip.blueprint, 1, equip));
+        OnInventoryChanged?.Invoke();
+        if (!isSilent && UI_SystemToast.Instance != null) 
+            UI_SystemToast.Instance.Show(equip.uid, $"获得装备: {equip.blueprint.itemName}", 1, equip.blueprint.icon);
+    }
+
     public void UnequipItem(EquipmentSlot slot)
     {
-        // 👇 核心改动：从当前 UI 焦点角色身上脱装备
         var player = (UI_CharacterSheet.Instance != null && UI_CharacterSheet.Instance.CurrentFocusCharacter != null) 
-                     ? UI_CharacterSheet.Instance.CurrentFocusCharacter 
-                     : GameManager.Instance.Player;
+                     ? UI_CharacterSheet.Instance.CurrentFocusCharacter : GameManager.Instance.Player;
         if (player == null) return;
 
-        // 1. 从身上脱下
-        EquipmentData removedItem = player.Unequip(slot);
+        RuntimeEquipment removedItem = player.Unequip(slot);
 
-        // 2. 放回背包
         if (removedItem != null)
         {
-            AddItem(removedItem, 1);
-            Debug.Log($"[Inventory] 卸下装备: {removedItem.itemName}");
+            // 👇 修复：静默塞回背包 (isSilent = true)
+            AddItem(removedItem, 1, true); 
+            
+            // 👇 修复：在这里手动呼叫精准的“卸下”播报
+            if (UI_SystemToast.Instance != null) 
+                UI_SystemToast.Instance.Show(removedItem.uid, $"卸下装备: {removedItem.blueprint.itemName}", 0, removedItem.blueprint.icon);
+                
+            Debug.Log($"[Inventory] 卸下装备: {removedItem.blueprint.itemName} (UID: {removedItem.uid})");
         }
         
-        // 3. 刷新 UI (角色面板)
-        // 这一步通常由 UI 监听 Inventory 变化自动完成，或者手动刷新
         if (UIManager.Instance != null) UIManager.Instance.RefreshPlayerStatus();
     }
-    // 公开的移除方法 (用于商店卖出、任务上交等)
+
     public void RemoveItem(ItemData item, int count = 1)
     {
         InventorySlot slot = inventory.Find(s => s.itemData == item);
         if (slot != null)
         {
             slot.Remove(count);
-            if (slot.amount <= 0)
-            {
-                inventory.Remove(slot);
-            }
+            if (slot.amount <= 0) inventory.Remove(slot);
             OnInventoryChanged?.Invoke();
         }
     }
@@ -89,12 +115,42 @@ public class InventoryManager : MonoBehaviour
         return slot != null && slot.amount >= count;
     }
 
-    // --- 核心功能: 使用物品 (修改版) ---
+    // --- 👇 核心脱壳：引入 UseSlot 以精准锁定肉身 ---
+    public void UseSlot(InventorySlot slot)
+    {
+        if (slot == null || slot.itemData == null) return;
+
+        if (slot.equipmentInstance != null)
+        {
+            // 它是实体装备！路由给详情面板！
+            if (UI_EquipmentDetailPanel.Instance != null)
+            {
+                UI_EquipmentDetailPanel.Instance.OpenPanel(slot.equipmentInstance, EquipmentPanelSource.Inventory);
+            }
+            else
+            {
+                // UI坏了的保底盲穿
+                if (UI_TargetSelector.Instance != null)
+                {
+                    UI_TargetSelector.Instance.OpenSelector($"请选择穿戴者：\n{slot.equipmentInstance.blueprint.itemName}", AvatarDisplayMode.NameOnly, (selectedTarget) => 
+                    {
+                        EquipItemLogic(slot.equipmentInstance, selectedTarget);
+                    });
+                }
+                else EquipItemLogic(slot.equipmentInstance, GameManager.Instance.Player);
+            }
+        }
+        else
+        {
+            // 它是普通消耗品，走旧逻辑
+            UseItem(slot.itemData);
+        }
+    }
+
+    // 保留给消耗品的旧接口
     public void UseItem(ItemData item)
     {
         if (item == null) return;
-
-        // 分流 A: 消耗品
         if (item.type == ItemType.Consumable)
         {
             if (GameManager.Instance.CurrentState == GameState.Battle)
@@ -103,10 +159,8 @@ public class InventoryManager : MonoBehaviour
             }
             else
             {
-                // 👇 核心改动：呼叫目标选择器！问玩家这药喂给谁！
                 if (UI_TargetSelector.Instance != null)
                 {
-                    
                     UI_TargetSelector.Instance.OpenSelector($"请选择目标：\n使用 {item.itemName}", AvatarDisplayMode.FullStats, (selectedTarget) => 
                     {
                         ApplyItemEffect(selectedTarget, item);
@@ -116,62 +170,30 @@ public class InventoryManager : MonoBehaviour
                 }
                 else
                 {
-                    // 兜底
                     ApplyItemEffect(GameManager.Instance.Player, item);
                     ConsumeItem(item);
                 }
             }
         }
-            // 👇 分流 B: 装备 (升级为路由到详情面板)
-        else if (item is EquipmentData equipData) 
-        {
-            if (UI_EquipmentDetailPanel.Instance != null)
-            {
-                // 拦截成功，弹出面板，告诉它是从背包(Inventory)打开的
-                UI_EquipmentDetailPanel.Instance.OpenPanel(equipData, EquipmentPanelSource.Inventory);
-            }
-            else
-            {
-                // 保底逻辑：如果详情UI坏了，直接呼叫目标选择器盲穿！
-                
-                if (UI_TargetSelector.Instance != null)
-                {
-                    
-                    UI_TargetSelector.Instance.OpenSelector($"请选择穿戴者：\n{equipData.itemName}", AvatarDisplayMode.NameOnly,(selectedTarget) => 
-                    {
-                        EquipItemLogic(equipData, selectedTarget);
-                    });
-                }
-                else
-                {
-                    // 最终物理保底：直接强行塞给队长
-                    EquipItemLogic(equipData, GameManager.Instance.Player);
-                }
-            }
-        }
-        else
-        {
-            Debug.Log($"这东西({item.itemName})不能直接使用！类型: {item.type}");
-        }
     }
 
-    // --- 👇 装备逻辑实现 ---
-    public void EquipItemLogic(EquipmentData newEquip, RuntimeCharacter target)
+    // --- 👇 穿戴逻辑彻底接管肉身 ---
+    public void EquipItemLogic(RuntimeEquipment newEquip, RuntimeCharacter target)
     {
-        if (target == null) return;
+        if (target == null || newEquip == null) return;
 
-        EquipmentData oldEquip = target.Unequip(newEquip.slotType);
+        // 把旧衣服脱了塞回背包
+        RuntimeEquipment oldEquip = target.Unequip(newEquip.blueprint.slotType);
+        if (oldEquip != null) AddItem(oldEquip, 1, true);
 
-        if (oldEquip != null)
-        {
-            AddItem(oldEquip, 1, true); // 静默塞回背包，不弹窗
-        }
-
+        // 穿新衣服
         target.Equip(newEquip);
-        ConsumeItem(newEquip);
 
-        Debug.Log($"[换装] {target.Name} 穿上了 {newEquip.itemName} | 新攻击力: {target.Attack}");
-        // 可选: 播放穿装备音效
+        // 从背包抹除这件肉身
+        InventorySlot slot = inventory.Find(s => s.equipmentInstance == newEquip);
+        if (slot != null) { inventory.Remove(slot); OnInventoryChanged?.Invoke(); }
+
+        Debug.Log($"[换装] {target.Name} 穿上了 {newEquip.blueprint.itemName}({newEquip.rarity}) | 新攻击力: {target.Attack}");
     }
 
     private void ConsumeItem(ItemData item)
@@ -191,7 +213,6 @@ public class InventoryManager : MonoBehaviour
         if (item.healAmount > 0)
         {
             target.CurrentHP += item.healAmount;
-            // 使用属性 MaxHP 确保不超过上限
             if (target.CurrentHP > target.MaxHP) target.CurrentHP = target.MaxHP;
         }
         if (item.manaAmount > 0)
@@ -201,16 +222,4 @@ public class InventoryManager : MonoBehaviour
         }
         if (UIManager.Instance != null) UIManager.Instance.RefreshPlayerStatus();
     }
-    
-    [ContextMenu("Test: Print Inventory")]
-    public void PrintInventory()
-    {
-        Debug.Log("--- 当前背包内容 ---");
-        foreach (var slot in inventory)
-        {
-            Debug.Log($"- {slot.itemData.itemName}: {slot.amount}");
-        }
-    }
-
-    
 }

@@ -34,3 +34,7 @@ MonoBehaviour:
     maxStock: 1
     refreshType: 0
     currentStock: 0
+  - item: {fileID: 11400000, guid: e74155e6036fd9742834400eef24d4e2, type: 2}
+    maxStock: 1
+    refreshType: 1
+    currentStock: 0

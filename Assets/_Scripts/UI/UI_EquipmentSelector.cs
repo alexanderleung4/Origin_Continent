@@ -7,14 +7,14 @@ public class UI_EquipmentSelector : MonoBehaviour
     public static UI_EquipmentSelector Instance { get; private set; }
 
     [Header("UI 引用 (UI References)")]
-    public GameObject panelRoot;         // 面板的根节点
-    public TextMeshProUGUI titleText;    // 标题 (如: "选择武器")
-    public Transform gridContainer;      // 挂载 GridLayoutGroup 的列表父节点
-    public Button closeButton;           // 关闭按钮
-    public GameObject emptyPrompt;       // (可选) 背包里没有该部位装备时的提示文字
+    public GameObject panelRoot;         
+    public TextMeshProUGUI titleText;    
+    public Transform gridContainer;      
+    public Button closeButton;           
+    public GameObject emptyPrompt;       
 
     [Header("预制体 (Prefabs)")]
-    public GameObject slotPrefab;        // 直接复用您 UI_Inventory 里的格子预制体！
+    public GameObject slotPrefab;        
 
     private EquipmentSlot currentSlot;
 
@@ -29,7 +29,6 @@ public class UI_EquipmentSelector : MonoBehaviour
         ClosePanel();
         if (closeButton != null) closeButton.onClick.AddListener(ClosePanel);
         
-        // 核心联动：只要背包发生了变化（比如我们点击了穿戴），这个筛选器就功成身退自动关闭！
         if (InventoryManager.Instance != null)
             InventoryManager.Instance.OnInventoryChanged.AddListener(OnInventoryChanged);
     }
@@ -42,11 +41,9 @@ public class UI_EquipmentSelector : MonoBehaviour
 
     private void OnInventoryChanged()
     {
-        // 如果侦测到穿戴完成导致背包变动，自动关掉自己，把视线还给角色大面板
         if (panelRoot.activeSelf) ClosePanel();
     }
 
-    // 唤出筛选器
     public void OpenSelector(EquipmentSlot slot)
     {
         currentSlot = slot;
@@ -58,49 +55,54 @@ public class UI_EquipmentSelector : MonoBehaviour
 
     private void RefreshList()
     {
-        // 1. 清空旧格子
         foreach (Transform child in gridContainer) Destroy(child.gameObject);
-
         bool hasItems = false;
 
-        // 2. 遍历大背包，进行精准过滤！
         foreach (var invSlot in InventoryManager.Instance.inventory)
         {
-            // 只要它是装备，且部位对得上
-            if (invSlot.itemData is EquipmentData equipData && equipData.slotType == currentSlot)
+            // 如果这个格子装的是实体装备，且部位对得上
+            if (invSlot.equipmentInstance != null && invSlot.equipmentInstance.blueprint.slotType == currentSlot)
             {
                 hasItems = true;
                 GameObject go = Instantiate(slotPrefab, gridContainer);
                 
-                // 复用旧格子的结构
                 Image iconImg = go.transform.Find("Icon")?.GetComponent<Image>();
                 TextMeshProUGUI amountText = go.transform.Find("Amount")?.GetComponent<TextMeshProUGUI>();
 
-                if (iconImg != null && equipData.icon != null) { iconImg.sprite = equipData.icon; iconImg.enabled = true; }
-                if (amountText != null) amountText.text = invSlot.amount > 1 ? invSlot.amount.ToString() : "";
+                Image bgImg = go.GetComponent<Image>();
+                if (bgImg != null)
+                {
+                    bgImg.color = GetRarityColor(invSlot.equipmentInstance.rarity);
+                }
+
+                if (iconImg != null && invSlot.equipmentInstance.blueprint.icon != null) 
+                { 
+                    iconImg.sprite = invSlot.equipmentInstance.blueprint.icon; 
+                    iconImg.enabled = true; 
+                }
+                if (amountText != null) amountText.text = ""; // 肉身必定是1个，不显示数量
 
                 Button btn = go.GetComponent<Button>();
                 if (btn == null) btn = go.AddComponent<Button>();
                 
-                // 👇 绝杀逻辑：点击后直接呼出装备详情大面板！伪装成从 Inventory 打开的，以此激活【装备】按钮
-                btn.onClick.AddListener(() => OnEquipSelected(equipData));
+                // 👇 修复点 6：点击时，准确传递格子里的装备实例！
+                btn.onClick.AddListener(() => OnEquipSelected(invSlot.equipmentInstance));
 
-                // 悬浮提示
                 UI_TooltipTrigger tooltip = go.GetComponent<UI_TooltipTrigger>();
                 if (tooltip == null) tooltip = go.AddComponent<UI_TooltipTrigger>();
-                tooltip.currentItem = equipData;
+                tooltip.currentItem = invSlot.equipmentInstance.blueprint;
             }
         }
 
         if (emptyPrompt != null) emptyPrompt.SetActive(!hasItems);
     }
 
-    private void OnEquipSelected(EquipmentData equipData)
+    // 👇 修复点 7：接收 RuntimeEquipment
+    private void OnEquipSelected(RuntimeEquipment equipInstance)
     {
         if (UI_EquipmentDetailPanel.Instance != null)
         {
-            // 呼叫详情大面板！
-            UI_EquipmentDetailPanel.Instance.OpenPanel(equipData, EquipmentPanelSource.Inventory);
+            UI_EquipmentDetailPanel.Instance.OpenPanel(equipInstance, EquipmentPanelSource.Inventory);
         }
     }
 
@@ -120,6 +122,17 @@ public class UI_EquipmentSelector : MonoBehaviour
             case EquipmentSlot.Neck: return "项链";
             case EquipmentSlot.Hands: return "手套";
             default: return "装备";
+        }
+    }
+    private Color GetRarityColor(EquipmentRarity rarity)
+    {
+        switch (rarity)
+        {
+            case EquipmentRarity.Common: return Color.white; // 或者用 new Color(0.8f, 0.8f, 0.8f) 浅灰
+            case EquipmentRarity.Rare: return new Color(0f, 0.63f, 1f); // 蓝色 #00A2FF
+            case EquipmentRarity.Epic: return new Color(0.81f, 0.26f, 1f); // 紫色 #D042FF
+            case EquipmentRarity.Legendary: return new Color(1f, 0.84f, 0f); // 金色 #FFD700
+            default: return Color.white;
         }
     }
 }
