@@ -13,10 +13,15 @@ public enum StockRefreshType
 public struct ShopItemEntry
 {
     public ItemData item;
-    public int maxStock;        // 最大库存 (-1 代表无限)
+    public int maxStock;        
     public StockRefreshType refreshType;
     
-    [HideInInspector] public int currentStock; // 运行时库存 (非序列化，由 Manager 管理)
+    [HideInInspector] public int currentStock; 
+
+    [Header("✨ 神装定制 (仅对装备图纸有效)")]
+    [Tooltip("勾选后，玩家买到的将不再是白板，而是指定品质并带有随机词条的神装！")]
+    public bool overrideEquipment; 
+    public EquipmentRarity targetRarity;
 }
 
 [CreateAssetMenu(fileName = "NewShop", menuName = "Origin/Shop Data")]

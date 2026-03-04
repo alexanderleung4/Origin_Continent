@@ -63,9 +63,14 @@ public class SaveManager : MonoBehaviour
         data.roster = new List<PlayerSaveData>();
         data.activePartyIDs = new List<string>();
         List<RuntimeCharacter> allMembersToSave = new List<RuntimeCharacter>();
-        allMembersToSave.AddRange(GameManager.Instance.activeParty);
-        allMembersToSave.AddRange(GameManager.Instance.reserveParty);
+        
+        if (GameManager.Instance != null)
+        {
+            if (GameManager.Instance.activeParty != null) allMembersToSave.AddRange(GameManager.Instance.activeParty);
+            if (GameManager.Instance.reserveParty != null) allMembersToSave.AddRange(GameManager.Instance.reserveParty);
+        }
 
+        // 1. 角色名册保存 (极严防爆)
         foreach (var member in allMembersToSave)
         {
             if (member == null || member.data == null) continue;
@@ -81,46 +86,65 @@ public class SaveManager : MonoBehaviour
             pData.talentPoints = member.TalentPoints;
 
             pData.traits = new List<TraitSaveEntry>();
-            foreach (var t in member.traits)
-                if (t.data != null) pData.traits.Add(new TraitSaveEntry { traitID = t.data.traitID, level = t.level });
+            if (member.traits != null)
+            {
+                foreach (var t in member.traits)
+                    if (t != null && t.data != null) pData.traits.Add(new TraitSaveEntry { traitID = t.data.traitID, level = t.level });
+            }
 
             pData.allocatedTalents = new List<TalentEntry>();
-            foreach (var kvp in member.allocatedTalents)
-                pData.allocatedTalents.Add(new TalentEntry(kvp.Key, kvp.Value));
+            if (member.allocatedTalents != null)
+            {
+                foreach (var kvp in member.allocatedTalents)
+                    pData.allocatedTalents.Add(new TalentEntry(kvp.Key, kvp.Value));
+            }
 
             pData.equipment = new List<EquipmentEntry>();
-            foreach (var kvp in member.equipment)
+            if (member.equipment != null)
             {
-                if (kvp.Value != null)
+                foreach (var kvp in member.equipment)
                 {
-                    EquipmentEntry newEntry = new EquipmentEntry(kvp.Key, kvp.Value.blueprint.name);
-                    // 👇 核心修复 1：序列化身上的实体装备
-                    newEntry.equipData = SerializeEquipment(kvp.Value);
-                    pData.equipment.Add(newEntry);
+                    // 🛡️ 绝对防爆：肉身和图纸缺一不可，否则丢弃不存
+                    if (kvp.Value != null && kvp.Value.blueprint != null)
+                    {
+                        EquipmentEntry newEntry = new EquipmentEntry(kvp.Key, kvp.Value.blueprint.name);
+                        newEntry.equipData = SerializeEquipment(kvp.Value);
+                        pData.equipment.Add(newEntry);
+                    }
                 }
             }
 
             data.roster.Add(pData);
-            data.activePartyIDs.Add(member.data.characterID); 
         }
 
-        for (int i = 0; i < 6; i++)
+        // 2. 阵型保存 (极严防爆)
+        if (GameManager.Instance != null && GameManager.Instance.activeFormation != null)
         {
-            var m = GameManager.Instance.activeFormation[i];
-            data.activePartyIDs.Add(m != null ? m.data.characterID : ""); 
+            for (int i = 0; i < 6; i++)
+            {
+                var m = GameManager.Instance.activeFormation[i];
+                // 🛡️ 绝对防爆：如果位置有人，但没灵魂(data为null)，强行记为空位
+                data.activePartyIDs.Add((m != null && m.data != null) ? m.data.characterID : ""); 
+            }
         }
 
-        if (GameManager.Instance.currentLocation != null) data.locationID = GameManager.Instance.currentLocation.name;
-        data.eventMemory = new List<string>(GameManager.Instance.eventMemory);
+        if (GameManager.Instance != null && GameManager.Instance.currentLocation != null) 
+            data.locationID = GameManager.Instance.currentLocation.name;
+            
+        data.eventMemory = new List<string>();
+        if (GameManager.Instance != null && GameManager.Instance.eventMemory != null)
+            data.eventMemory = new List<string>(GameManager.Instance.eventMemory);
 
+        // 3. 背包保存 (极严防爆)
         data.inventory = new List<InventorySaveData>();
-        if (InventoryManager.Instance != null)
+        if (InventoryManager.Instance != null && InventoryManager.Instance.inventory != null)
         {
             foreach (var slot in InventoryManager.Instance.inventory)
             {
-                if (slot.equipmentInstance != null)
+                if (slot == null) continue;
+
+                if (slot.equipmentInstance != null && slot.equipmentInstance.blueprint != null)
                 {
-                    // 👇 核心修复 2：背包里的神锻装备不再退化为白板材料
                     InventorySaveData invData = new InventorySaveData { itemID = slot.equipmentInstance.blueprint.name, amount = slot.amount };
                     invData.equipData = SerializeEquipment(slot.equipmentInstance);
                     data.inventory.Add(invData);
@@ -132,20 +156,32 @@ public class SaveManager : MonoBehaviour
             }
         }
 
+        // 4. 任务保存 (极严防爆)
         data.activeQuests = new List<QuestSaveData>();
-        if (QuestManager.Instance != null)
+        if (QuestManager.Instance != null && QuestManager.Instance.activeQuests != null)
         {
             foreach (var q in QuestManager.Instance.activeQuests)
             {
+                if (q == null) continue; // 防止列表里有空元素
                 QuestSaveData qData = new QuestSaveData();
                 qData.questID = q.name;
                 qData.isCompleted = q.isCompleted;
                 qData.objectivesProgress = new List<int>();
-                foreach(var obj in q.objectives) qData.objectivesProgress.Add(obj.currentAmount);
+                if (q.objectives != null)
+                {
+                    foreach(var obj in q.objectives) qData.objectivesProgress.Add(obj.currentAmount);
+                }
                 data.activeQuests.Add(qData);
             }
         }
+        
+        // 5. 商店记忆保存
+        if (ShopManager.Instance != null)
+            data.shopStates = ShopManager.Instance.GetStockStateForSave();
+        else
+            data.shopStates = new List<ShopSaveData>();
 
+        // 写入硬盘
         string path = GetPath(saveID);
         File.WriteAllText(path, JsonUtility.ToJson(data, true));
         Debug.Log($"[Save] 成功写入: {path}");
@@ -287,6 +323,10 @@ public class SaveManager : MonoBehaviour
                 }
             }
         }
+        if (ShopManager.Instance != null && data.shopStates != null)
+        {
+            ShopManager.Instance.RestoreStockState(data.shopStates);
+        }
 
         Debug.Log($"[Load] 读档完成。");
         if(UIManager.Instance != null) UIManager.Instance.RefreshPlayerStatus();
@@ -356,7 +396,9 @@ public class SaveManager : MonoBehaviour
     // ==========================================
     private RuntimeEquipmentSaveData SerializeEquipment(RuntimeEquipment equip)
     {
-        if (equip == null || equip.blueprint == null) return null;
+        // 🛡️ 防爆盾 1：肉身或灵魂(蓝图)丢失，拒绝序列化
+        if (equip == null || equip.blueprint == null) return null; 
+
         return new RuntimeEquipmentSaveData
         {
             uid = equip.uid,
@@ -365,7 +407,8 @@ public class SaveManager : MonoBehaviour
             currentExp = equip.currentExp,
             rarity = (int)equip.rarity,
             currentDurability = equip.currentDurability,
-            affixes = new List<ItemAffix>(equip.affixes) // 深度拷贝词条列表
+            // 🛡️ 防爆盾 2：如果旧存档或测试代码导致 affixes 为空，安全地赋予一个空列表，防止 new List(null) 崩溃
+            affixes = equip.affixes != null ? new List<ItemAffix>(equip.affixes) : new List<ItemAffix>() 
         };
     }
 

@@ -117,11 +117,32 @@ public class ShopManager : MonoBehaviour
             return false;
         }
 
-        // 3. 执行交易
+        // 3. 执行交易扣钱
         player.Gold -= totalCost;
-        InventoryManager.Instance.AddItem(item, quantity);
 
-        // 4. 扣除库存
+        // 👇 4. 核心拦截：呼叫智能工厂发货！
+        if (item is EquipmentData equipBlueprint)
+        {
+            // 找出这个商品在商店配置里的具体条目，看看策划有没有下达“定制指令”
+            ShopItemEntry entry = shop.stockItems.Find(e => e.item == item);
+            
+            for (int i = 0; i < quantity; i++)
+            {
+                EquipmentRarity rarity = entry.overrideEquipment ? entry.targetRarity : EquipmentRarity.Common;
+                // 呼叫母机，直接印出实体肉身
+                RuntimeEquipment newEquip = ForgeEngine.Generate(equipBlueprint, rarity);
+                
+                // 将实体肉身强行塞入背包
+                InventoryManager.Instance.AddItem(newEquip, 1);
+            }
+        }
+        else
+        {
+            // 普通消耗品或材料，走旧通道
+            InventoryManager.Instance.AddItem(item, quantity);
+        }
+
+        // 5. 扣除库存
         if (currentStock != -1)
         {
             shopStockState[shop][item] -= quantity;
@@ -215,5 +236,72 @@ public class ShopManager : MonoBehaviour
             GameManager.Instance.Player.Gold += 1000;
             Debug.Log($"[Cheat] 获得 1000 金币。当前: {GameManager.Instance.Player.Gold}");
         }
+    }
+    // ========================================================================
+    // 9. 序列化与数据持久化对接 (Save System Integration)
+    // ========================================================================
+    
+    /// <summary>
+    /// 将内存中的库存状态打包，交给 SaveManager 存入硬盘
+    /// </summary>
+    public List<ShopSaveData> GetStockStateForSave()
+    {
+        List<ShopSaveData> list = new List<ShopSaveData>();
+        foreach (var shopEntry in shopStockState)
+        {
+            // 🛡️ 核心防爆盾 1：如果商店配置表丢失或被代码销毁（如 TestBuy 中的临时对象），直接跳过！
+            if (shopEntry.Key == null) continue; 
+
+            ShopSaveData sData = new ShopSaveData();
+            sData.shopID = shopEntry.Key.name; 
+            sData.itemStocks = new List<ShopItemStockSaveData>();
+
+            if (shopEntry.Value != null)
+            {
+                foreach (var itemEntry in shopEntry.Value)
+                {
+                    // 🛡️ 核心防爆盾 2：如果物品数据丢失，跳过！
+                    if (itemEntry.Key == null) continue;
+
+                    sData.itemStocks.Add(new ShopItemStockSaveData 
+                    { 
+                        itemID = itemEntry.Key.name, 
+                        currentStock = itemEntry.Value 
+                    });
+                }
+            }
+            list.Add(sData);
+        }
+        return list;
+    }
+
+    /// <summary>
+    /// 读档时，接收 SaveManager 传来的数据，覆盖当前内存
+    /// </summary>
+    public void RestoreStockState(List<ShopSaveData> savedStates)
+    {
+        shopStockState.Clear();
+        if (savedStates == null || savedStates.Count == 0) return;
+
+        foreach (var sData in savedStates)
+        {
+            // 去 Resources/Shops/ 目录下寻找商店配置 (请确保策划把商店SO建在这个目录下)
+            ShopData shop = Resources.Load<ShopData>($"Shops/{sData.shopID}"); 
+            if (shop != null)
+            {
+                Dictionary<ItemData, int> stockMap = new Dictionary<ItemData, int>();
+                foreach (var iData in sData.itemStocks)
+                {
+                    ItemData item = Resources.Load<ItemData>($"Items/{iData.itemID}");
+                    if (item != null) stockMap[item] = iData.currentStock;
+                }
+                shopStockState[shop] = stockMap;
+            }
+            else
+            {
+                Debug.LogWarning($"[ShopManager] 读档异常：找不到商店配置文件 Resources/Shops/{sData.shopID}");
+            }
+        }
+        Debug.Log("[ShopManager] 商店库存数据已从存档中恢复。");
     }
 }

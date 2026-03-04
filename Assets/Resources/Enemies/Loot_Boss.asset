@@ -17,11 +17,26 @@ MonoBehaviour:
     dropChance: 100
     minAmount: 1
     maxAmount: 1
+    useRNGDrop: 0
+    chanceCommon: 60
+    chanceRare: 30
+    chanceEpic: 9
+    chanceLegendary: 1
   - item: {fileID: 11400000, guid: 024d60c0e8e3fbd44833acd45fbdc894, type: 2}
     dropChance: 45
     minAmount: 2
     maxAmount: 5
+    useRNGDrop: 0
+    chanceCommon: 60
+    chanceRare: 30
+    chanceEpic: 9
+    chanceLegendary: 1
   - item: {fileID: 11400000, guid: d3c4bc1ecc2417840a00cdd0746311c0, type: 2}
     dropChance: 100
     minAmount: 1
     maxAmount: 1
+    useRNGDrop: 0
+    chanceCommon: 60
+    chanceRare: 30
+    chanceEpic: 9
+    chanceLegendary: 1

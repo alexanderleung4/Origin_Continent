@@ -31,6 +31,9 @@ public class SaveData
 
     // --- 背包系统 (Inventory) ---
     public List<InventorySaveData> inventory; 
+
+    // 👇 新增：商店库存记忆 (Shop Stocks)
+    public List<ShopSaveData> shopStates;
 }
 
 // ===================================================================================
@@ -127,4 +130,18 @@ public class RuntimeEquipmentSaveData
     public int rarity; // 使用 int 存储枚举
     public int currentDurability;
     public List<ItemAffix> affixes;
+}
+
+[System.Serializable]
+public struct ShopSaveData
+{
+    public string shopID; // 商店配置文件的文件名 (e.g., "Shop_Village")
+    public List<ShopItemStockSaveData> itemStocks;
+}
+
+[System.Serializable]
+public struct ShopItemStockSaveData
+{
+    public string itemID; // 物品的文件名
+    public int currentStock;
 }

@@ -42,13 +42,14 @@ public class InventoryManager : MonoBehaviour
         if (item == null) return;
         if (item is EquipmentData equipBlueprint)
         {
+            // 🚨 警告系统：告知开发者不应该直接 AddItem(图纸)
+            Debug.LogWarning($"[Inventory] 警告：拦截到试图直接向背包发放图纸 [{item.itemName}]。已强行通过 ForgeEngine 为其兜底生成白板肉身！请尽量传入 RuntimeEquipment！");
+            
             for (int i = 0; i < count; i++)
             {
-                RuntimeEquipment newEquip = new RuntimeEquipment(equipBlueprint, EquipmentRarity.Common);
+                RuntimeEquipment newEquip = ForgeEngine.Generate(equipBlueprint, EquipmentRarity.Common);
                 inventory.Add(new InventorySlot(equipBlueprint, 1, newEquip));
-                Debug.Log($"[神锻] 装备实体化完成: {equipBlueprint.itemName} (UID: {newEquip.uid} | 攻击: {newEquip.DynamicDamage})");
             }
-            
             OnInventoryChanged?.Invoke();
             if (!isSilent && UI_SystemToast.Instance != null) UI_SystemToast.Instance.Show(item.name, $"获得装备: {item.itemName}", count, item.icon);
             return; 

@@ -911,8 +911,17 @@ public class BattleManager : MonoBehaviour
                             var drops = enemy.runtime.data.lootTable.GenerateLoot();
                             foreach (var drop in drops)
                             {
-                                InventoryManager.Instance.AddItem(drop.itemData, drop.amount);
-                                dropMsg += $"{drop.itemData.itemName}x{drop.amount} ";
+                                // 👇 智能拦截：看看这个掉落槽位里有没有生成的肉身实体
+                                if (drop.equipmentInstance != null)
+                                {
+                                    InventoryManager.Instance.AddItem(drop.equipmentInstance, 1);
+                                    dropMsg += $"[{drop.equipmentInstance.rarity}]{drop.equipmentInstance.blueprint.itemName} ";
+                                }
+                                else
+                                {
+                                    InventoryManager.Instance.AddItem(drop.itemData, drop.amount);
+                                    dropMsg += $"{drop.itemData.itemName}x{drop.amount} ";
+                                }
                                 hasDrops = true;
                             }
                         }

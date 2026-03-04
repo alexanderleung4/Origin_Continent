@@ -14,27 +14,31 @@ public class UI_Shop : MonoBehaviour
     public Button closeButton;
 
     [Header("Mode Switching")]
-    public Button btnModeBuy; // "买入" 按钮
-    public Button btnModeSell; // "卖出" 按钮
-    private bool isBuyingMode = true; // 当前是否在买入
+    public Button btnModeBuy; 
+    public Button btnModeSell; 
+    private bool isBuyingMode = true; 
 
     [Header("List Area")]
-    public Transform listContainer; // 滚动列表的内容父节点
-    public GameObject shopSlotPrefab; // 商品格子预制体
+    public Transform listContainer; 
+    public GameObject shopSlotPrefab; 
 
     [Header("Details Area")]
-    public GameObject detailsPanel; // 详情面板整体
+    public GameObject detailsPanel; 
     public Image detailIcon;
     public TextMeshProUGUI detailName;
     public TextMeshProUGUI detailDesc;
     public TextMeshProUGUI detailPrice;
-    public Button actionButton; // "购买" 或 "出售" 按钮
+    public Button actionButton; 
     public TextMeshProUGUI actionBtnText;
-    public TextMeshProUGUI detailStock; // 详情页显示库存/持有量
+    public TextMeshProUGUI detailStock; 
 
     // --- 运行时数据 ---
     private ShopData currentShop;
-    private ItemData selectedItem;
+    
+    // 👇 修改：选中项不再是单纯的 ItemData，而是整个商品条目，这样才能知道它的定制品质
+    private ShopItemEntry selectedEntry; 
+    // 卖出模式下，我们只关心 ItemData，可以用一个临时的 Entry 包裹它
+    private ItemData selectedSellItem;
 
     private void Awake()
     {
@@ -43,14 +47,12 @@ public class UI_Shop : MonoBehaviour
         
         panelRoot.SetActive(false);
         
-        // 绑定按钮事件
         if (closeButton) closeButton.onClick.AddListener(CloseShop);
         if (btnModeBuy) btnModeBuy.onClick.AddListener(() => SwitchMode(true));
         if (btnModeSell) btnModeSell.onClick.AddListener(() => SwitchMode(false));
         if (actionButton) actionButton.onClick.AddListener(OnActionClick);
     }
 
-    // --- 核心入口: 打开商店 ---
     public void OpenShop(ShopData shop)
     {
         if (UIManager.Instance != null)
@@ -63,7 +65,6 @@ public class UI_Shop : MonoBehaviour
         
         if (shopTitleText) shopTitleText.text = shop.shopName;
         
-        // 默认进买入模式
         SwitchMode(true);
     }
 
@@ -71,25 +72,21 @@ public class UI_Shop : MonoBehaviour
     {
         panelRoot.SetActive(false);
         currentShop = null;
-        selectedItem = null;
+        selectedEntry = default;
+        selectedSellItem = null;
     }
 
-    // --- 模式切换 ---
     public void SwitchMode(bool buying)
     {
         isBuyingMode = buying;
-        selectedItem = null; // 切换模式时清空选择
-        detailsPanel.SetActive(false); // 隐藏详情
-
-        // 更新按钮视觉 (可选：高亮当前模式)
-        // if (btnModeBuy) btnModeBuy.interactable = !buying;
-        // if (btnModeSell) btnModeSell.interactable = buying;
+        selectedEntry = default; 
+        selectedSellItem = null;
+        detailsPanel.SetActive(false); 
 
         RefreshList();
         RefreshGold();
     }
 
-    // --- 刷新金币显示 ---
     public void RefreshGold()
     {
         if (GameManager.Instance.Player != null)
@@ -98,45 +95,45 @@ public class UI_Shop : MonoBehaviour
         }
     }
 
-    // --- 核心: 刷新列表 ---
-public void RefreshList()
+    public void RefreshList()
     {
-        // 1. 清空列表
         foreach (Transform child in listContainer) Destroy(child.gameObject);
 
-        // 2. 根据模式决定数据源
         if (isBuyingMode)
         {
-            // --- 买入模式: 显示商店库存 ---
             if (currentShop != null)
             {
-                // 这里遍历的是 ShopItemEntry，而不是 ItemData
                 foreach (ShopItemEntry entry in currentShop.stockItems)
                 {
-                    // 我们要把 entry.item 传给创建函数
-                    CreateSlot(entry.item, true);
+                    // 👇 传入完整的 entry
+                    CreateSlot(entry, true);
                 }
             }
         }
         else
         {
-            // --- 卖出模式: 显示玩家背包 (只显示可卖品) ---
             if (InventoryManager.Instance != null)
             {
+                // 用 HashSet 防重复显示同名物品
+                HashSet<ItemData> processedItems = new HashSet<ItemData>();
                 foreach (InventorySlot slot in InventoryManager.Instance.inventory)
                 {
-                    if (slot.itemData.isSellable)
+                    if (slot.itemData.isSellable && !processedItems.Contains(slot.itemData))
                     {
-                        CreateSlot(slot.itemData, false);
+                        processedItems.Add(slot.itemData);
+                        ShopItemEntry dummyEntry = new ShopItemEntry { item = slot.itemData };
+                        CreateSlot(dummyEntry, false);
                     }
                 }
             }
         }
     }
 
-    // --- 创建格子 ---
-    private void CreateSlot(ItemData item, bool isBuy)
+    private void CreateSlot(ShopItemEntry entry, bool isBuy)
     {
+        ItemData item = entry.item;
+        if (item == null) return;
+
         GameObject slotObj = Instantiate(shopSlotPrefab, listContainer);
         
         Image icon = slotObj.transform.Find("Icon").GetComponent<Image>();
@@ -144,128 +141,136 @@ public void RefreshList()
         TextMeshProUGUI price = slotObj.transform.Find("Price").GetComponent<TextMeshProUGUI>();
         Button btn = slotObj.GetComponent<Button>();
 
-        // 👇 新增: 获取库存/持有量 Text (假设 Prefab 里加了一个叫 "Stock" 的文本)
-        // 如果没有这个 UI 元素，这一步可以跳过，只在详情页显示
-        // TextMeshProUGUI stockText = slotObj.transform.Find("Stock").GetComponent<TextMeshProUGUI>();
-
         icon.sprite = item.icon;
-        name.text = item.itemName;
         
-        // --- 逻辑分支 ---
+        // 👇 核心视觉升维：根据定制品质上色！
+        string displayName = item.itemName;
+        Color nameColor = Color.white;
+
+        if (isBuy && entry.overrideEquipment && item is EquipmentData)
+        {
+            switch (entry.targetRarity)
+            {
+                case EquipmentRarity.Rare: displayName = $"<color=#4A90E2>【稀有】{item.itemName}</color>"; nameColor = new Color(0.3f, 0.6f, 1f); break;
+                case EquipmentRarity.Epic: displayName = $"<color=#9013FE>【史诗】{item.itemName}</color>"; nameColor = new Color(0.6f, 0.1f, 1f); break;
+                case EquipmentRarity.Legendary: displayName = $"<color=#F5A623>【传说】{item.itemName}</color>"; nameColor = new Color(1f, 0.84f, 0f); break; // 经典的暗黑暗金
+            }
+        }
+
+        name.text = displayName;
+        
         if (isBuy)
         {
-            // 买入模式：显示经过难度计算的动态价格
             int dynamicPrice = GameManager.Instance.GetDynamicBuyPrice(item);
             price.text = $"${dynamicPrice}";
             
-            // 检查库存是否耗尽
             int stock = ShopManager.Instance.GetStock(currentShop, item);
-            if (stock == 0) // 卖光了
+            if (stock == 0) 
             {
-                btn.interactable = false; // 变灰
-                name.color = Color.gray;
-                // if (stockText) stockText.text = "售罄";
+                btn.interactable = false; 
+                name.color = Color.gray; // 售罄变灰
             }
             else
             {
                 btn.interactable = true;
-                name.color = Color.white;
-                // if (stockText) stockText.text = (stock == -1) ? "∞" : stock.ToString();
+                // 如果没有售罄，且没有被上面上色，就保持白色
+                if (!entry.overrideEquipment) name.color = Color.white; 
             }
+
+            btn.onClick.AddListener(() => OnItemSelect_Buy(entry, displayName));
         }
         else
         {
-            // 卖出模式：显示收购价
             price.text = $"${item.sellPrice}";
-            
-            // 检查玩家持有量
-            int owned = 0;
-            var slot = InventoryManager.Instance.inventory.Find(s => s.itemData == item);
-            if (slot != null) owned = slot.amount;
-            
-            // if (stockText) stockText.text = $"持有: {owned}";
+            btn.onClick.AddListener(() => OnItemSelect_Sell(item));
         }
-
-        btn.onClick.AddListener(() => OnItemSelect(item));
     }
 
-    // --- 选中商品 ---
-    private void OnItemSelect(ItemData item)
+    private void OnItemSelect_Buy(ShopItemEntry entry, string richName)
     {
-        selectedItem = item;
+        selectedEntry = entry;
+        ItemData item = entry.item;
+        detailsPanel.SetActive(true);
+
+        detailIcon.sprite = item.icon;
+        detailName.text = richName;
+        
+        // 追加神装描述
+        if (entry.overrideEquipment)
+            detailDesc.text = $"<color=#F5A623>[购买时随机生成 {entry.targetRarity} 级专属词条]</color>\n\n" + item.description;
+        else
+            detailDesc.text = item.description;
+
+        int stock = ShopManager.Instance.GetStock(currentShop, item);
+        string stockStr = (stock == -1) ? "无限" : stock.ToString();
+        
+        int dynamicPrice = GameManager.Instance.GetDynamicBuyPrice(item);
+        detailPrice.text = $"价格: {dynamicPrice}";
+        
+        if (detailStock) detailStock.text = $"库存: {stockStr}";
+
+        if (stock == 0)
+        {
+            actionButton.interactable = false;
+            actionBtnText.text = "已售罄";
+        }
+        else if (GameManager.Instance.Player.Gold < dynamicPrice) 
+        {
+            actionButton.interactable = false;
+            actionBtnText.text = "金币不足";
+        }
+        else
+        {
+            actionButton.interactable = true;
+            actionBtnText.text = "购买";
+        }
+    }
+
+    private void OnItemSelect_Sell(ItemData item)
+    {
+        selectedSellItem = item;
         detailsPanel.SetActive(true);
 
         detailIcon.sprite = item.icon;
         detailName.text = item.itemName;
         detailDesc.text = item.description;
 
-        if (isBuyingMode)
-        {
-            // --- 买入详情 ---
-            int stock = ShopManager.Instance.GetStock(currentShop, item);
-            string stockStr = (stock == -1) ? "无限" : stock.ToString();
-            
-            int dynamicPrice = GameManager.Instance.GetDynamicBuyPrice(item);
-            detailPrice.text = $"价格: {dynamicPrice}";
-            
-            // 显示库存
-            if (detailStock) detailStock.text = $"库存: {stockStr}";
+        int owned = 0;
+        var slot = InventoryManager.Instance.inventory.Find(s => s.itemData == item);
+        if (slot != null) owned = slot.amount;
 
-            // 按钮状态
-            if (stock == 0)
-            {
-                actionButton.interactable = false;
-                actionBtnText.text = "已售罄";
-            }
-            else if (GameManager.Instance.Player.Gold < dynamicPrice) // 👇 修改判断
-            {
-                actionButton.interactable = false;
-                actionBtnText.text = "金币不足";
-            }
-            else
-            {
-                actionButton.interactable = true;
-                actionBtnText.text = "购买";
-            }
-        }
-        else
-        {
-            // --- 卖出详情 ---
-            int owned = 0;
-            var slot = InventoryManager.Instance.inventory.Find(s => s.itemData == item);
-            if (slot != null) owned = slot.amount;
+        detailPrice.text = $"收购价: {item.sellPrice}";
+        if (detailStock) detailStock.text = $"背包持有: {owned}";
 
-            detailPrice.text = $"收购价: {item.sellPrice}";
-            
-            // 👇 新增: 显示持有量
-            if (detailStock) detailStock.text = $"背包持有: {owned}";
-
-            actionButton.interactable = true;
-            actionBtnText.text = "出售";
-        }
+        actionButton.interactable = true;
+        actionBtnText.text = "出售";
     }
 
-    // --- 点击执行按钮 ---
     private void OnActionClick()
     {
-        if (selectedItem == null) return;
         bool success = false;
 
         if (isBuyingMode)
         {
-            // 👇 关键修改: 传入 currentShop
-            success = ShopManager.Instance.BuyItem(currentShop, selectedItem, 1);
+            if (selectedEntry.item == null) return;
+            success = ShopManager.Instance.BuyItem(currentShop, selectedEntry.item, 1);
+            if (success)
+            {
+                RefreshGold();
+                RefreshList(); 
+                OnItemSelect_Buy(selectedEntry, detailName.text); // 刷新详情页状态
+            }
         }
         else
         {
-            success = ShopManager.Instance.SellItem(selectedItem, 1);
-        }
-
-        if (success)
-        {
-            RefreshGold();
-            RefreshList(); // 必须刷新列表，因为库存/持有量变了，按钮状态要更新
-            OnItemSelect(selectedItem); // 刷新详情页状态
+            if (selectedSellItem == null) return;
+            success = ShopManager.Instance.SellItem(selectedSellItem, 1);
+            if (success)
+            {
+                RefreshGold();
+                RefreshList(); 
+                OnItemSelect_Sell(selectedSellItem); 
+            }
         }
     }
 }

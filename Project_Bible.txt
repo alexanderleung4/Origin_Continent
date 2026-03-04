@@ -17,11 +17,10 @@
 ### 📁 Managers (全局单例与核心控制)
 * AudioManager, BattleManager, DialogueManager, GameManager, InventoryManager
 * QuestManager, SaveManager, SceneFader, ShopManager, TimeManager, VFXManager
-* ForgeManager (神锻与概率引擎)
+* ForgeManager (神锻与概率引擎)，EnhanceManager (强化运算逻辑与一键装填算法)
 
 ### 📁 SaveSystem
 * SaveData (负责序列化落地的核心数据结构)
-
 ### 📁 Scriptables (静态配置与数据中心)
 * BuffData, CharacterData, DialogueData, EquipmentData, ItemData
 * LocationData, LootTable, QuestData, ShopData, SkillData, StageData
@@ -42,7 +41,7 @@
 * UI_TargetSelector (全境目标选择模态窗)
 * UI_Formation (营地六宫格战术编队沙盘)
 * UI_RosterAvatar (通用状态化头像组件，支持极简/名字/全状态三种 AvatarDisplayMode)
-* UI_Blacksmith, UI_RecipeSlot, UI_IngredientSlot
+* UI_Blacksmith, UI_RecipeSlot, UI_IngredientSlot，UI_EnhanceTab (强化交互终端)
 
 ### 📁 Utils (底层工具)
 * AutoDestroy, CSVLoader。
@@ -104,6 +103,15 @@
 * 肉身法则 (Instance Rule): 装备数据分为图纸 (`EquipmentData`) 和实体 (`RuntimeEquipment`)。角色穿戴、背包存储、UI 详情展示必须且只能引用 `RuntimeEquipment`，严禁修改图纸静态数据。
 * 数值三层架构 (Stat Layers): 装备总属性 = 白值 (受品质/强化等级乘区放大) + 固有属性 (图纸死数值) + 随机词条 (锻造/掉落时概率生成的 Affixes)。
 * 经济回收 (Salvage Loop): 废弃装备严禁直接销毁，必须通过 `ForgeManager.SalvageEquipment` 进入回收管线，依品质倍率转化为基础材料，盘活系统熵值。
+
+### ⚙️ 武装强化与持久化协议 (Enhancement & Persistence Protocol)
+* 经验法则 (Exp Feed Rule): 装备升级统一通过消耗带有 `feedExpValue` 的实体装备或堆叠材料（狗粮）进行。严禁绕过经验结算直接修改 `level` 字段。
+* 觉醒里程碑 (Milestone Awakening): 装备每跨越 5 个等级节点（+5, +10, +15），必须触发一次 `AwakenRandomAffix`（随机强化已有词条），与白值成长共同构成完整的数值驱动力。
+* 实体无损序列化 (Instance Serialization): 任何脱离图纸的装备肉身，在存入硬盘时必须通过 `RuntimeEquipmentSaveData` 进行全量快照（包含等级、经验、耐久及词条数组）。读档重建肉身时，必须强制调用 `CalculateDynamicStats()` 以重算当级白值乘区，确保数据跨场景流转的绝对守恒。
+
+### 💰 商业与背包资产协议 (Economy & Inventory Protocol)
+* 动态物价法则 (Dynamic Pricing): 绝对禁止在 UI_Shop 中直接读取 ItemData.price 作为最终售价。所有的买入价格必须经过 GameManager.GetDynamicBuyPrice() 处理，以兼容不同难度下的经济通胀。
+* 资产流入静默阀门 (Asset Inflow Valve): 所有的物品获取（无论是打怪掉落、任务奖励、还是商店购买），必须且只能通过 InventoryManager.AddItem() 统一入口流入背包。严禁绕过此接口直接操作 List。大批量发奖或读档恢复时，必须强制传入 isSilent = true 以阻断 UI_SystemToast 的雪崩式弹窗。
 
 ====================================================================
 ## 3. 极易混淆变量警示录 (Variable Blacklist/Whitelist)
