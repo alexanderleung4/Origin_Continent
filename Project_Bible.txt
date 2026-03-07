@@ -13,6 +13,7 @@
 * RuntimeCharacter
 * GameEnums (包含 TeamType, GameDifficulty 等全局通用枚举)
 * RuntimeEquipment (装备实体肉身), ItemAffix (随机词条)
+* ForgeEngine (静态智能装配工厂，专职负责将图纸“印制”成带有词条的实体肉身)
 
 ### 📁 Managers (全局单例与核心控制)
 * AudioManager, BattleManager, DialogueManager, GameManager, InventoryManager

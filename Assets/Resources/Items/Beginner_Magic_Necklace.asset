@@ -25,7 +25,13 @@ MonoBehaviour:
   healAmount: 0
   manaAmount: 0
   staminaAmount: 0
+  feedExpValue: 10
   slotType: 2
+  baseDamage: 0
+  baseDefense: 0
+  baseMaxHP: 0
+  baseMaxMP: 10
+  maxDurability: 10
   modifiers:
   - statType: 1
     type: 0
@@ -33,8 +39,5 @@ MonoBehaviour:
   - statType: 3
     type: 0
     value: 5
-  baseDamage: 0
-  baseDefense: 0
-  baseMaxHP: 0
-  baseMaxMP: 0
-  maxDurability: 10
+  possibleAffixes: 
+  salvageRewards: []

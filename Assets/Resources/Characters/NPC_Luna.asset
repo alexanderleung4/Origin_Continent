@@ -92,3 +92,5 @@ MonoBehaviour:
   defeatCGs: []
   startingSkills:
   - {fileID: 11400000, guid: f1f2ce9d04775d8428c1df53c411ea44, type: 2}
+  - {fileID: 11400000, guid: cad379a16a6db6f46a1bb09221b5b4aa, type: 2}
+  - {fileID: 11400000, guid: 03804ac93f0962a4ebed317d137f07c7, type: 2}

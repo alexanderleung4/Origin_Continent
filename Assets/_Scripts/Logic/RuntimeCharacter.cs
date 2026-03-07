@@ -136,11 +136,24 @@ public class RuntimeCharacter
         float step1 = baseValue + equipFlat + traitFlat;
         float step2 = step1 * (1f + ((equipPercent + traitPercent) / 100f));
 
-        // 5. 天赋
+        // 5. 天赋 (👇 核心重构：引入属性权重汇率)
         int talentFlat = 0;
-        if (allocatedTalents.ContainsKey(type)) talentFlat = allocatedTalents[type]; 
+        if (allocatedTalents.ContainsKey(type)) 
+        {
+            int investedPoints = allocatedTalents[type];
+            // 定义不同属性的转化权重
+            switch (type)
+            {
+                case StatType.MaxHP: talentFlat = investedPoints * 10; break;     // 1 点天赋 = 10 HP
+                case StatType.MaxMP: talentFlat = investedPoints * 5; break;      // 1 点天赋 = 5 MP
+                case StatType.MaxStamina: talentFlat = investedPoints * 5; break; // 1 点天赋 = 5 Stamina
+                case StatType.Attack: talentFlat = investedPoints * 2; break;     // 1 点天赋 = 2 攻击力
+                case StatType.Defense: talentFlat = investedPoints * 2; break;    // 1 点天赋 = 2 防御力
+                case StatType.Speed: talentFlat = investedPoints * 1; break;      // 1 点天赋 = 1 速度 (速度收益高，保持1:1)
+                default: talentFlat = investedPoints; break;
+            }
+        }
         float finalValue = step2 + talentFlat;
-
         // Buff
         int buffBonus = 0;
         foreach (var buff in activeBuffs)
@@ -218,8 +231,11 @@ public class RuntimeCharacter
                 }
             }
             
-            if (allocatedTalents.ContainsKey(StatType.CritRate)) total += allocatedTalents[StatType.CritRate] / 100f; 
-            return total;
+            // 3. 天赋加成 (1点天赋 = 0.5% 暴击率)
+            if (allocatedTalents.ContainsKey(StatType.CritRate)) 
+                total += (allocatedTalents[StatType.CritRate] * 0.5f) / 100f; 
+                
+            return total; // 👈 必须有返回值
         }
     }
 
@@ -246,8 +262,11 @@ public class RuntimeCharacter
                 }
             }
             
-            if (allocatedTalents.ContainsKey(StatType.CritDamage)) total += allocatedTalents[StatType.CritDamage] / 100f; 
-            return total;
+            // 3. 天赋加成 (1点天赋 = 2.0% 暴击伤害)
+            if (allocatedTalents.ContainsKey(StatType.CritDamage)) 
+                total += (allocatedTalents[StatType.CritDamage] * 2.0f) / 100f; 
+                
+            return total; // 👈 必须有返回值
         }
     }
 

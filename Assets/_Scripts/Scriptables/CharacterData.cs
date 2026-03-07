@@ -64,6 +64,11 @@ public class CharacterData : ScriptableObject
     public Sprite bodySprite_HalfBroken; 
     public Sprite bodySprite_Broken; 
 
+    // 👇 --- 核心新增：战斗实战小人 --- 👇
+    [Header("⚔️ Combat Model (实战模型)")]
+    [Tooltip("绑定好原生 2D 骨骼和 Animator 的战斗小人预制体")]
+    public GameObject combatChibiPrefab;
+
     [Range(0.5f, 3f)] public float visualScale = 1.0f; // ✅ [核心] 战斗时调整怪物大小
 
     [Header("💬 Interaction (交互配置)")]
