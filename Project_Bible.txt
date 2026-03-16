@@ -19,6 +19,7 @@
 * AudioManager, BattleManager, DialogueManager, GameManager, InventoryManager
 * QuestManager, SaveManager, SceneFader, ShopManager, TimeManager, VFXManager
 * ForgeManager (神锻与概率引擎)，EnhanceManager (强化运算逻辑与一键装填算法)
+* DialogueVFX (对话演出特效工具类，处理立绘滑动/背景渐变/闪白协程)
 
 ### 📁 SaveSystem
 * SaveData (负责序列化落地的核心数据结构)
@@ -70,6 +71,13 @@
   * `Item:ItemID` (获取道具)
   * `Shop:ShopID` (开启商店)
   * `Gold:数量`, `Exp:数量`, `Heal`, `Stamina:数量` (数值操作)
+* **演出特效指令 (VFX Commands):** CSV的Event列支持以下新增指令：
+  * `Fade:in` / `Fade:out` (屏幕淡入淡出)
+  * `Shake:light` / `Shake:heavy` (轻/重震动)
+  * `Flash:white` (闪白)
+  * `Portrait:slidein` / `Portrait:slideout` (立绘滑入滑出)
+  * `BG:fade` (背景渐变切换)
+* **Asset双轨触发:** DialogueLine新增 `vfxType` 枚举字段，Asset配置的对话可直接在Inspector选择特效，无需写指令字符串。
 
 ### 📢 全局播报系统 (System Toast Protocol)
 * **底层拦截原则:** 播报触发必须深深埋在最底层的数据变动处 (如 `InventoryManager.AddItem` 或 `GainExp` 结算循环后)，严禁在业务逻辑层 (如开宝箱的瞬间) 重复写弹窗代码。
