@@ -340,6 +340,7 @@ public class RuntimeCharacter
     private void LevelUp()
     {
         Level++;
+        CurrentExp -= GetExpForLevel(Level + 1);
         TalentPoints++; 
         CurrentHP = MaxHP;
         CurrentMP = MaxMP;

@@ -48,10 +48,7 @@ public class GameManager : MonoBehaviour
 
         // 👇 改动：不要直接刷新，而是启动一个协程“延迟刷新”
         StartCoroutine(DelayedUIRefresh());
-        if (TimeManager.Instance != null)
-        {
-            TimeManager.Instance.OnDayChanged.AddListener(OnDayPassed);
-        }
+        
     }
 
     // 新增：延迟刷新协程
