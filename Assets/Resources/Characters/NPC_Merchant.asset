@@ -23,11 +23,12 @@ MonoBehaviour:
   bodySprite_Dead: {fileID: 0}
   bodySprite_HalfBroken: {fileID: 0}
   bodySprite_Broken: {fileID: 0}
+  combatChibiPrefab: {fileID: 0}
   visualScale: 1
   linkedShop: {fileID: 11400000, guid: c2229f78aecffad41ae6831a69c3e67a, type: 2}
   defaultAffinity: 0
   defaultDialogue: {fileID: 11400000, guid: 00b4133f74c57fb489eb129dfc9f36bf, type: 2}
-  currentStoryCSV: Dlg_Village_Hello
+  currentStoryCSV: Dlg_Merchant_Hello
   maxHP: 100
   maxMP: 0
   maxStamina: 100
@@ -91,6 +92,3 @@ MonoBehaviour:
   lootTable: {fileID: 0}
   defeatCGs: []
   startingSkills: []
-  defaultMaxLifespan: 80
-  lifespanPerLevel: 1
-  isUndead: 1

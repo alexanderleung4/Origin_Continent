@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Quest_Daily_Slime
   m_EditorClassIdentifier: 
   questID: Quest_Daily_Slime
-  title: "\u6BCF\u65E5\u6668\u7EC3"
+  title: "\u51FB\u6740\u53F2\u83B1\u59C6"
   description: "\u51FB\u6740\u4E00\u53EA\u53F2\u83B1\u59C6"
-  questType: 2
+  questType: 0
   locationName: "\u8FF7\u96FE\u68EE\u6797"
   npcName: Luna
   objectives:
