@@ -33,4 +33,6 @@ public class UI_Battle : MonoBehaviour
     [Header("Timeline UI (右侧行动条)")]
     public Transform timelineContainer;    // 挂载了 VerticalLayoutGroup 的父节点
     public GameObject timelineIconPrefab;  // 拖入挂载了 UI_TimelineIcon 的预制体
+    [Header("Battle Announcement (战斗公告演出)")]
+    public UI_BattleAnnouncement announcement;
 }

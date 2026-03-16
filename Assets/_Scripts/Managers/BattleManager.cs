@@ -94,6 +94,11 @@ public class BattleManager : MonoBehaviour
         }
         else InitBattleLogic(stageData);
     }
+    private IEnumerator DelayedAnnouncement()
+    {
+        yield return new WaitForEndOfFrame();
+        ui.announcement.PlayBattleStart();
+    }
 
     private void InitBattleLogic(StageData stage)
     {
@@ -110,8 +115,9 @@ public class BattleManager : MonoBehaviour
             if (ui.actionPanel != null) ui.actionPanel.SetActive(false);
             if (ui.skillPanel != null) ui.skillPanel.SetActive(false);
         }
-
         SetupBattle(stage);
+        if (ui != null && ui.announcement != null)
+           StartCoroutine(DelayedAnnouncement());
     }
 
     // ========================================================================
@@ -883,6 +889,8 @@ public class BattleManager : MonoBehaviour
             if (actuallyWon)
             {
                 LogBattle("战斗胜利！");
+                if (ui != null && ui.announcement != null)
+                     ui.announcement.PlayVictory();
                 if (TimeManager.Instance != null)
                 {
                     TimeManager.Instance.AdvanceTime(60);
@@ -960,6 +968,8 @@ public class BattleManager : MonoBehaviour
             {
                 // 这是逃跑成功的结算
                 LogBattle("成功脱离战斗。");
+                if (ui != null && ui.announcement != null)
+                    ui.announcement.PlayDefeat();
             }
         }
         else if (state == BattleState.Lost)
