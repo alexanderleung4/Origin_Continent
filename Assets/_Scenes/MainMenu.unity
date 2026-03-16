@@ -35259,7 +35259,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentDifficulty: 1
-  playerTemplate: {fileID: 11400000, guid: 534804f31f15af0439be1a08d615af13, type: 2}
+  playerTemplate: {fileID: 11400000, guid: b99d08f3732a0254b85b09a06a46fd3a, type: 2}
   initialTeammates: []
   maxPartySize: 4
   activeFormation:

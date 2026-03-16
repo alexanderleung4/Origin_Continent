@@ -23,6 +23,7 @@ MonoBehaviour:
   bodySprite_Dead: {fileID: 0}
   bodySprite_HalfBroken: {fileID: 21300000, guid: 8e65894073ff17346a0a7c24b49e1e15, type: 3}
   bodySprite_Broken: {fileID: 21300000, guid: 2ff72fb7c51e4c84f90f961093913214, type: 3}
+  combatChibiPrefab: {fileID: 0}
   visualScale: 1
   linkedShop: {fileID: 0}
   defaultAffinity: 0

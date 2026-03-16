@@ -23,6 +23,7 @@ MonoBehaviour:
   bodySprite_Dead: {fileID: 21300000, guid: c3963ecda9cc5e542b27a4d9e53ce13b, type: 3}
   bodySprite_HalfBroken: {fileID: 0}
   bodySprite_Broken: {fileID: 0}
+  combatChibiPrefab: {fileID: 0}
   visualScale: 1
   linkedShop: {fileID: 0}
   defaultAffinity: 0
@@ -41,19 +42,19 @@ MonoBehaviour:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0.049610697
-      outSlope: 0.049610697
+      time: 0.88123155
+      value: 0.9869076
+      inSlope: 0.04029754
+      outSlope: 0.04029754
       tangentMode: 34
       weightedMode: 0
       inWeight: 0
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 99.847466
-      value: 4.953502
-      inSlope: 0.049610697
-      outSlope: 0.049610697
+      time: 100.39728
+      value: 4.9971595
+      inSlope: 0.04029754
+      outSlope: 0.04029754
       tangentMode: 34
       weightedMode: 0
       inWeight: 0.33333334
@@ -65,8 +66,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 1
-      value: 1
+      time: 0.99293435
+      value: 0.45123863
       inSlope: 2
       outSlope: 2
       tangentMode: 0

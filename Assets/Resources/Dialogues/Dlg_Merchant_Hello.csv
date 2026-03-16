@@ -1,0 +1,15 @@
+ID,Speaker,Content,Expression,NextID,Event
+start,Merchant,哟！新面孔！欢迎欢迎！,Smile,line_1,
+line_1,Merchant,这年头能走进广场的人越来越少了，你可算是稀客。,Normal,line_2,
+line_2,Player,这里是中央广场？,Normal,line_3,
+line_3,Merchant,没错！起源大陆最热闹的地方……以前是啦。,Normal,line_4,
+line_4,Merchant,自从那颗黑石头掉下来，好多人都不敢出门了。,Normal,line_5,
+line_5,Player,黑死咒的事？,Normal,line_6,
+line_6,Merchant,你也知道？那就好说了。用魔法越多死得越快，大家现在都憋着呢。,Normal,line_7,
+line_7,Merchant,不过憋着也没用，魔法力太低一样活不久。,Normal,line_8,
+line_8,Merchant,哎，不说丧气话了！你是来买东西的吧？,Smile,line_9,
+line_9,Merchant,第一次来，送你点见面礼！,Smile,line_10,Item:Item_Potion_HP
+line_10,Player,谢了。,Normal,line_11,
+line_11,Merchant,别客气！对了，迷雾森林那边最近不太平，,Normal,line_12,
+line_12,Merchant,史莱姆倒没什么，就是听说更深处有更危险的东西。,Normal,line_13,
+line_13,Merchant,要去的话备足物资再走，我这里什么都有！,Smile,END,Finish:Dlg_Merchant_Hello

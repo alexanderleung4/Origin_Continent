@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 999a2b51f8e9f234896df82e959bd8cd, type: 3}
   m_Name: CG_Lilith_GoblinDefeat
   m_EditorClassIdentifier: 
-  dialogueID: CG_Lilith_OrcDefeat
+  dialogueID: CG_Lilith_GoblinDefeat
   lines:
   - speakerName: Lilith
     content: "\u201C\u5514\u2026\u2026\u8BE5\u6B7B\u2026\u2026\u8FD9\u79CD\u6C61\u79FD\u7684\u529B\u91CF\u2026\u2026\u662F\u9ED1\u6B7B\u5492\u5728\u53CD\u566C\u5417\uFF1F\u201D"

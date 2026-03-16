@@ -35,6 +35,6 @@ MonoBehaviour:
   isSubmitted: 0
   minLevel: 1
   preRequisiteQuest: {fileID: 0}
-  startDialogueCSV: Luna_first_event
+  startDialogueCSV: Dlg_Kyle_Opening
   processingDialogue: {fileID: 11400000, guid: 83aeb308a93c3fe419a3e8af5bb2f1ad, type: 2}
   completeDialogueCSV: Luna_first_event_end
