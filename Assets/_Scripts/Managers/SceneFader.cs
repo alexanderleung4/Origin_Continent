@@ -60,7 +60,7 @@ public class SceneFader : MonoBehaviour
         yield return StartCoroutine(FadeIn());
     }
 
-    private IEnumerator FadeIn()
+    public IEnumerator FadeIn()
     {
         float t = fadeDuration;
         while (t > 0f)

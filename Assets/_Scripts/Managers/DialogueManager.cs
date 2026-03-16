@@ -22,6 +22,8 @@ public class DialogueManager : MonoBehaviour
     public Image portraitRight;           // 右侧立绘 (专门留给 NPC)
     public Color activeColor = Color.white;                   // 说话时的颜色 (高亮)
     public Color inactiveColor = new Color(0.5f, 0.5f, 0.5f); // 聆听时的颜色 (变暗)
+    [Header("VFX (演出特效)")]
+    public Image flashOverlay;  // 全屏闪白用的纯白Image，平时SetActive(false)
 
     // --- 状态流转控制 ---
     private Queue<DialogueLine> linesQueue = new Queue<DialogueLine>();
@@ -244,6 +246,11 @@ public class DialogueManager : MonoBehaviour
         {
             HandleEvent(line.eventCommand);
         }
+        // --- F. Asset配置的VFX触发 ---
+        if (line.vfxType != DialogueVFXType.None)
+        {
+            HandleVFXType(line.vfxType);
+        }
     }
 
     // 辅助方法：设置单个立绘的状态
@@ -309,6 +316,48 @@ public class DialogueManager : MonoBehaviour
     // ========================================================================
     // 3. 事件解析引擎 (完全保留您的架构)
     // ========================================================================
+    private void HandleVFXType(DialogueVFXType vfx)
+    {
+        switch (vfx)
+        {
+            case DialogueVFXType.FadeIn:
+                if (SceneFader.Instance != null) StartCoroutine(SceneFader.Instance.FadeIn());
+                break;
+            case DialogueVFXType.FadeOut:
+                if (SceneFader.Instance != null) SceneFader.Instance.FadeAndExecute(() => { });
+                break;
+            case DialogueVFXType.ShakeLight:
+                if (VFXManager.Instance != null && uiContentGroup != null)
+                    VFXManager.Instance.ShakeUnit(uiContentGroup.gameObject, 0.3f, 5f);
+                break;
+            case DialogueVFXType.ShakeHeavy:
+                if (VFXManager.Instance != null && uiContentGroup != null)
+                    VFXManager.Instance.ShakeUnit(uiContentGroup.gameObject, 0.3f, 12f);
+                break;
+            case DialogueVFXType.FlashWhite:
+                StartCoroutine(DialogueVFX.FlashWhite(flashOverlay));
+                break;
+            case DialogueVFXType.PortraitSlideIn:
+                if (portraitLeft != null && portraitLeft.gameObject.activeSelf)
+                    StartCoroutine(DialogueVFX.SlideIn(portraitLeft.rectTransform, true));
+                if (portraitRight != null && portraitRight.gameObject.activeSelf)
+                    StartCoroutine(DialogueVFX.SlideIn(portraitRight.rectTransform, false));
+                break;
+            case DialogueVFXType.PortraitSlideOut:
+                if (portraitLeft != null && portraitLeft.gameObject.activeSelf)
+                    StartCoroutine(DialogueVFX.SlideOut(portraitLeft.rectTransform, true));
+                if (portraitRight != null && portraitRight.gameObject.activeSelf)
+                    StartCoroutine(DialogueVFX.SlideOut(portraitRight.rectTransform, false));
+                break;
+            case DialogueVFXType.BGFade:
+                if (cgBackground != null)
+                    StartCoroutine(DialogueVFX.CrossFadeBackground(cgBackground, cgBackground.sprite));
+                break;
+        }
+    }
+
+
+
     private void HandleEvent(string command)
     {
         Debug.Log($"[Dialogue] 触发事件: {command}");
@@ -364,7 +413,7 @@ public class DialogueManager : MonoBehaviour
                  QuestManager.Instance.OnNPCInteracted(value);
                 break;
             // ==========================================
-            // 👇 新增: 人事调动指令 (Recruitment & Roster)
+            // 人事调动指令 (Recruitment & Roster)
             // ==========================================
             case "JoinParty":
                 if (GameManager.Instance != null) 
@@ -379,8 +428,51 @@ public class DialogueManager : MonoBehaviour
                     GameManager.Instance.LeaveParty(value);
                 }
                 break;
-                
-        }
+            case "Fade":
+                if (SceneFader.Instance != null)
+                {
+                    if (value == "in") StartCoroutine(SceneFader.Instance.FadeIn());
+                    else if (value == "out") SceneFader.Instance.FadeAndExecute(() => { });
+                }
+                break;
+
+            case "Shake":
+                if (VFXManager.Instance != null)
+                {
+                    float strength = (value == "heavy") ? 12f : 5f;
+                    if (uiContentGroup != null)
+                        VFXManager.Instance.ShakeUnit(uiContentGroup.gameObject, 0.3f, strength);
+                }
+                break;
+
+            case "Flash":
+                if (value == "white")
+                    StartCoroutine(DialogueVFX.FlashWhite(flashOverlay));
+                break;
+
+            case "Portrait":
+                if (value == "slidein")
+                {
+                    if (portraitLeft != null && portraitLeft.gameObject.activeSelf)
+                        StartCoroutine(DialogueVFX.SlideIn(portraitLeft.rectTransform, true));
+                    if (portraitRight != null && portraitRight.gameObject.activeSelf)
+                        StartCoroutine(DialogueVFX.SlideIn(portraitRight.rectTransform, false));
+                }
+                else if (value == "slideout")
+                {
+                    if (portraitLeft != null && portraitLeft.gameObject.activeSelf)
+                        StartCoroutine(DialogueVFX.SlideOut(portraitLeft.rectTransform, true));
+                    if (portraitRight != null && portraitRight.gameObject.activeSelf)
+                        StartCoroutine(DialogueVFX.SlideOut(portraitRight.rectTransform, false));
+                }
+                break;
+
+            case "BG":
+                if (value == "fade" && cgBackground != null)
+                    StartCoroutine(DialogueVFX.CrossFadeBackground(cgBackground, cgBackground.sprite));
+                break;
+                            
+            }
 
         if (UIManager.Instance != null) UIManager.Instance.RefreshPlayerStatus();
     }
