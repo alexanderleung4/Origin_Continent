@@ -35,4 +35,7 @@ public class UI_Battle : MonoBehaviour
     public GameObject timelineIconPrefab;  // 拖入挂载了 UI_TimelineIcon 的预制体
     [Header("Battle Announcement (战斗公告演出)")]
     public UI_BattleAnnouncement announcement;
+
+    [Header("Stage Advance (关卡推进面板)")]
+    public UI_StageAdvance stageAdvancePanel;
 }

@@ -21,6 +21,8 @@ public class BattleManager : MonoBehaviour
     public static BattleManager Instance { get; private set; }
     public BattleState state;
 
+    private StageData currentStage; // 记录当前关卡，用于结算后的链式推进
+
     [Header("Audio")]
     public AudioClip defaultBattleBGM; 
 
@@ -87,6 +89,7 @@ public class BattleManager : MonoBehaviour
         {
             SceneFader.Instance.FadeAndExecute(() => 
             {
+                currentStage = stageData;
                 InitBattleLogic(stageData);
                 if (AudioManager.Instance != null && defaultBattleBGM != null)
                     AudioManager.Instance.PlayMusic(defaultBattleBGM);
@@ -962,6 +965,8 @@ public class BattleManager : MonoBehaviour
                     UI_SystemToast.Instance.Show("Gold", "队伍获得金币:", goldGain, null);
 
                 LogBattle($"获得经验: {expGain}, 金币: {goldGain}");
+                // 关卡链推进
+                StartCoroutine(HandleStageAdvance());
                 if (hasDrops) LogBattle(dropMsg);
             }
             else
@@ -995,7 +1000,15 @@ public class BattleManager : MonoBehaviour
             }
         }
 
-        StartCoroutine(ProcessCGAndEnd(waitTime));
+        if (state == BattleState.Won && currentStage != null && currentStage.nextStage != null)
+        {
+            // 有下一关：HandleStageAdvance 全权接管，不走 ProcessCGAndEnd
+        }
+        else
+        {
+            // 无下一关或战败：走原有的 CG + 结算流程
+            StartCoroutine(ProcessCGAndEnd(waitTime));
+        }
     }
     public void OnRunButtonClicked() { if (state == BattleState.PlayerMenu) StartCoroutine(AttemptEscape()); }
 
@@ -1066,6 +1079,47 @@ public class BattleManager : MonoBehaviour
             }
         }
         yield return StartCoroutine(CloseBattleDelay(0f));
+    }
+    private IEnumerator HandleStageAdvance()
+    {
+        // 等待胜利演出播完（胜利公告2秒 + 缓冲）
+        yield return new WaitForSeconds(2.5f);
+
+        // 没有下一关，走正常结算流程
+        if (currentStage == null || currentStage.nextStage == null)
+        {
+            StartCoroutine(CloseBattleDelay(0f));
+            yield break;
+        }
+
+        StageData next = currentStage.nextStage;
+
+        // 自动推进（Boss战连续演出）
+        if (currentStage.autoAdvance)
+        {
+            LogBattle($"进入下一关：{next.stageName}");
+            yield return new WaitForSeconds(0.5f);
+            StartBattle(next);
+            yield break;
+        }
+
+        // 弹出选择面板
+        if (ui != null && ui.stageAdvancePanel != null)
+        {
+            ui.stageAdvancePanel.ShowPanel(
+                next,
+                currentStage.advancePrompt,
+                // 继续：直接开始下一关
+                () => StartBattle(next),
+                // 撤退：走正常结算关闭流程
+                () => StartCoroutine(CloseBattleDelay(0f))
+            );
+        }
+        else
+        {
+            // 没有面板就直接结算
+            StartCoroutine(CloseBattleDelay(0f));
+        }
     }
 
     private IEnumerator CloseBattleDelay(float delay)

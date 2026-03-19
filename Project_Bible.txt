@@ -44,6 +44,7 @@
 * UI_Formation (营地六宫格战术编队沙盘)
 * UI_RosterAvatar (通用状态化头像组件，支持极简/名字/全状态三种 AvatarDisplayMode)
 * UI_Blacksmith, UI_RecipeSlot, UI_IngredientSlot，UI_EnhanceTab (强化交互终端)
+* UI_BattleAnnouncement (战斗公告演出组件，负责开始/胜利/失败三段独立演出)
 
 ### 📁 Utils (底层工具)
 * AutoDestroy, CSVLoader。
@@ -57,6 +58,7 @@
   * 范围枚举：`TargetScope.Single`, `TargetScope.AllEnemies`, `TargetScope.Random` 等。
 * **死亡表现 (Corpse Protocol):** * 关闭所有 UI 交互组件 (`hpSlider`, `Button` 等)。
   * 若有 `bodySprite_Dead` 则替换并设为灰色，否则透明化隐藏。右侧行动条瞬间剔除。
+* **战斗公告演出 (Battle Announcement Protocol):** 战斗初始化时调用 `UI_BattleAnnouncement.PlayBattleStart()`，胜利/失败结算时分别调用 `PlayVictory()` / `PlayDefeat()`。演出通过 `CanvasGroup.alpha` 控制显隐，严禁用 `SetActive(false)` 隐藏根节点，否则协程无法启动。
 
 ### 🗺️ 大地图与场景 (Map Prefab System)
 * **优先级加载:** `UIManager` 优先实例化 `LocationData.mapPrefab`。

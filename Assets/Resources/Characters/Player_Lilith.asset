@@ -34,7 +34,7 @@ MonoBehaviour:
   maxStamina: 100
   attack: 10
   defense: 0
-  speed: 10
+  speed: 40
   baseCritRate: 0.15
   baseCritDamage: 1.5
   maxLevel: 100

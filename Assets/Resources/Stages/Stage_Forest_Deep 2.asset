@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76b5ab2da9514c0498b4d4d94ccdb9a1, type: 3}
+  m_Name: Stage_Forest_Deep 2
+  m_EditorClassIdentifier: 
+  stageID: Stage_Forest_Deep_2
+  stageName: "\u8FF7\u96FE\u68EE\u6797_\u6DF1\u5904_2"
+  backgroundImage: {fileID: 21300000, guid: 9062e2485ce133d4c999eb047350676b, type: 3}
+  enemies:
+  - enemyData: {fileID: 11400000, guid: 4075b39382f691448ac9d42890305136, type: 2}
+    slotIndex: 1
+  nextStage: {fileID: 0}
+  autoAdvance: 0
+  advancePrompt: "\u662F\u5426\u7EE7\u7EED\u524D\u8FDB\uFF1F"
+  clearExp: 200
+  clearGold: 0
+  stageLoot: {fileID: 0}

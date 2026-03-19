@@ -30,7 +30,7 @@ MonoBehaviour:
     itemAmount: 1
   nextQuest: {fileID: 0}
   isAbandonable: 1
-  isAccepted: 1
+  isAccepted: 0
   isCompleted: 0
   isSubmitted: 0
   minLevel: 1
