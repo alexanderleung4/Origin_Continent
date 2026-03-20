@@ -45,6 +45,7 @@
 * UI_RosterAvatar (通用状态化头像组件，支持极简/名字/全状态三种 AvatarDisplayMode)
 * UI_Blacksmith, UI_RecipeSlot, UI_IngredientSlot，UI_EnhanceTab (强化交互终端)
 * UI_BattleAnnouncement (战斗公告演出组件，负责开始/胜利/失败三段独立演出)
+* UI_StageAdvance (关卡推进选择面板，通关后弹出继续/撤退选项)
 
 ### 📁 Utils (底层工具)
 * AutoDestroy, CSVLoader。
@@ -59,6 +60,11 @@
 * **死亡表现 (Corpse Protocol):** * 关闭所有 UI 交互组件 (`hpSlider`, `Button` 等)。
   * 若有 `bodySprite_Dead` 则替换并设为灰色，否则透明化隐藏。右侧行动条瞬间剔除。
 * **战斗公告演出 (Battle Announcement Protocol):** 战斗初始化时调用 `UI_BattleAnnouncement.PlayBattleStart()`，胜利/失败结算时分别调用 `PlayVictory()` / `PlayDefeat()`。演出通过 `CanvasGroup.alpha` 控制显隐，严禁用 `SetActive(false)` 隐藏根节点，否则协程无法启动。
+
+### 🗺️ 关卡链推进协议 (Stage Chain Protocol)
+* **线性解锁:** StageData.nextStage 指向下一关，留空代表终点。主线用线性串联，支线各自独立。
+* **双模衔接:** autoAdvance=true 时通关自动进入下一关；false 时弹出 UI_StageAdvance 面板由玩家选择。
+* **管线互斥:** HandleStageAdvance 协程与 ProcessCGAndEnd 严格互斥——有下一关时前者独占，无下一关或战败时走后者。严禁两者并行。
 
 ### 🗺️ 大地图与场景 (Map Prefab System)
 * **优先级加载:** `UIManager` 优先实例化 `LocationData.mapPrefab`。
