@@ -588,6 +588,67 @@ public class BattleManager : MonoBehaviour
         LogBattle($"{attacker.runtime.Name} 使用了 {skill.skillName} !");
         
         if (AudioManager.Instance != null && skill.sfxClip != null) AudioManager.Instance.PlaySFX(skill.sfxClip);
+        // ========== 攻击位移演出 ==========
+        RectTransform attackerRT = attacker.uiEntity.bodyImage.rectTransform;
+        Vector2 attackerOrigin = attackerRT.anchoredPosition;
+        bool didMove = false;
+
+        if (skill.targetScope == TargetScope.Single_Enemy || skill.targetScope == TargetScope.Single_Ally)
+        {
+            BattleEntity firstTarget = defenders.Count > 0 ? defenders[0] : null;
+            if (firstTarget != null && firstTarget.uiEntity != null)
+            {
+                RectTransform canvasRT = attackerRT.GetComponentInParent<Canvas>().GetComponent<RectTransform>();
+                
+                // 把攻击者和目标都转换到Canvas坐标系
+                Vector2 attackerCanvas, targetCanvas;
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    canvasRT,
+                    RectTransformUtility.WorldToScreenPoint(null, attackerRT.position),
+                    null, out attackerCanvas);
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    canvasRT,
+                    RectTransformUtility.WorldToScreenPoint(null, firstTarget.uiEntity.bodyImage.rectTransform.position),
+                    null, out targetCanvas);
+
+                // 在Canvas坐标系下计算方向和目标点
+                float offset = attacker.isPlayerSide ? -80f : 80f;
+                Vector2 moveDirection = (targetCanvas - attackerCanvas).normalized;
+                Vector2 targetAnchor = attackerRT.anchoredPosition + moveDirection * (Vector2.Distance(attackerCanvas, targetCanvas) - Mathf.Abs(offset));
+
+                yield return StartCoroutine(MoveToTarget(attackerRT, targetAnchor, 0.15f));
+                didMove = true;
+            }
+        }
+        else if (skill.targetScope == TargetScope.All_Enemies || skill.targetScope == TargetScope.Random_Enemies)
+        {
+            if (ui != null && ui.centerPoint != null)
+            {
+                RectTransform canvasRT = attackerRT.GetComponentInParent<Canvas>().GetComponent<RectTransform>();
+                
+                // 把攻击者当前位置转到Canvas坐标系
+                Vector2 attackerCanvas;
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    canvasRT,
+                    RectTransformUtility.WorldToScreenPoint(null, attackerRT.position),
+                    null, out attackerCanvas);
+                
+                // 把中场点转到Canvas坐标系
+                Vector2 centerCanvas;
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    canvasRT,
+                    RectTransformUtility.WorldToScreenPoint(null, ui.centerPoint.position),
+                    null, out centerCanvas);
+                
+                // 用两者在Canvas坐标系下的差值，加到攻击者的anchoredPosition上
+                Vector2 delta = centerCanvas - attackerCanvas;
+                Vector2 targetAnchor = attackerRT.anchoredPosition + delta;
+                
+                yield return StartCoroutine(MoveToTarget(attackerRT, targetAnchor, 0.15f));
+                didMove = true;
+            }
+        }
+        // ========== 位移结束，继续演出 ==========
         if (skill.cutInImage != null && UI_CutIn.Instance != null) yield return StartCoroutine(UI_CutIn.Instance.PlayCutIn(skill, isPlayerAction));
         else yield return new WaitForSeconds(0.5f);
 
@@ -730,6 +791,11 @@ public class BattleManager : MonoBehaviour
 
         UpdateStatsUI();
         yield return new WaitForSeconds(1f);
+        // 演出结束，弹回原位
+        if (didMove)
+        {
+            yield return StartCoroutine(ReturnToOrigin(attackerRT, attackerOrigin, 0.12f));
+        }
         attacker.runtime.turnCount++;
 
         if (isPlayerAction && ui != null && ui.playerAvatarImage != null) ui.playerAvatarImage.gameObject.SetActive(false);
@@ -1261,6 +1327,36 @@ public class BattleManager : MonoBehaviour
         // 👇 吃完药，重置时间，推演时间轴！
         user.runtime.ResetAVAfterTurn();
         AdvanceTimeline();
+    }
+
+    // 位移到目标点，duration秒内完成
+    private IEnumerator MoveToTarget(RectTransform rt, Vector2 targetPos, float duration)
+    {
+        Vector2 startPos = rt.anchoredPosition;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
+            rt.anchoredPosition = Vector2.Lerp(startPos, targetPos, t);
+            yield return null;
+        }
+        rt.anchoredPosition = targetPos;
+    }
+
+    // 弹回原位
+    private IEnumerator ReturnToOrigin(RectTransform rt, Vector2 originPos, float duration)
+    {
+        Vector2 startPos = rt.anchoredPosition;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
+            rt.anchoredPosition = Vector2.Lerp(startPos, originPos, t);
+            yield return null;
+        }
+        rt.anchoredPosition = originPos;
     }
 
     private void LogBattle(string msg)

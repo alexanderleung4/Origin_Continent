@@ -38,4 +38,8 @@ public class UI_Battle : MonoBehaviour
 
     [Header("Stage Advance (关卡推进面板)")]
     public UI_StageAdvance stageAdvancePanel;
+
+    [Header("Combat Movement (战斗位移点)")]
+    [Tooltip("AOE技能的共用中场位移目标点")]
+    public Transform centerPoint;
 }
