@@ -19,7 +19,7 @@ public static class CSVLoader
         
         if (data == null)
         {
-            Debug.LogError($"[CSVLoader] 找不到文件: Resources/Dialogue/{csvFileName}");
+            Debug.LogError($"[CSVLoader] 找不到文件: Resources/Dialogues/{csvFileName}");
             return null;
         }
 

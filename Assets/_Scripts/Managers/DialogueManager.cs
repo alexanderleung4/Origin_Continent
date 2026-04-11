@@ -28,6 +28,7 @@ public class DialogueManager : MonoBehaviour
     // --- 状态流转控制 ---
     private Queue<DialogueLine> linesQueue = new Queue<DialogueLine>();
     public bool IsActive { get; private set; }
+    public bool IsImmersiveMode { get; set; } = false; // 沉浸模式：开启时仅显示对话框，隐藏立绘
     
     // --- 打字机系统 ---
     private bool isTyping = false;
@@ -257,6 +258,13 @@ public class DialogueManager : MonoBehaviour
     private void SetupPortrait(Image img, Sprite sprite, bool isSpeaking)
     {
         if (img == null) return;
+        // 👇 核心拦截：如果开启了沉浸模式，强制隐藏所有默认立绘
+        if (IsImmersiveMode)
+        {
+            img.gameObject.SetActive(false);
+            return;
+        }
+
         if (!isSpeaking && !img.gameObject.activeSelf)
         {
             return;
@@ -299,6 +307,7 @@ public class DialogueManager : MonoBehaviour
     private void EndDialogue()
     {
         IsActive = false;
+        IsImmersiveMode = false; // 退出对话时强制重置，防止污染其他正常对话
         // 离场时重置全屏 CG 与 UI 显示状态，防止残留与假死
         if (cgBackground != null) cgBackground.gameObject.SetActive(false);
         if (uiContentGroup != null)

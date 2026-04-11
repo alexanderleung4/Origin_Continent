@@ -91,6 +91,14 @@ MonoBehaviour:
   killGoldReward: 20
   lootTable: {fileID: 0}
   defeatCGs: []
+  affinityMilestones:
+  - requirementType: 1
+    requirementValue: 100
+    rewardType: 1
+    rewardParameter: Beginner_Magic_Necklace
+    milestoneDescription: "\u83B7\u5F97\u4E86\u9732\u5A1C\u7684\u9879\u94FE"
+  canBeTouched: 1
+  touchInteractionPrefab: {fileID: 7229435595570193175, guid: 266e87f93c447f54981e74256d00d615, type: 3}
   startingSkills:
   - {fileID: 11400000, guid: f1f2ce9d04775d8428c1df53c411ea44, type: 2}
   - {fileID: 11400000, guid: cad379a16a6db6f46a1bb09221b5b4aa, type: 2}

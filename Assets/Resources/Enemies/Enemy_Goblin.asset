@@ -23,6 +23,7 @@ MonoBehaviour:
   bodySprite_Dead: {fileID: 21300000, guid: 8297ac54e1c102943a22c23456738b55, type: 3}
   bodySprite_HalfBroken: {fileID: 0}
   bodySprite_Broken: {fileID: 0}
+  combatChibiPrefab: {fileID: 0}
   visualScale: 0.85
   linkedShop: {fileID: 0}
   defaultAffinity: 0
@@ -90,9 +91,9 @@ MonoBehaviour:
   killGoldReward: 20
   lootTable: {fileID: 11400000, guid: 0e39b81db860f904184c889d72098f10, type: 2}
   defeatCGs: []
+  affinityMilestones: []
+  canBeTouched: 0
+  touchInteractionPrefab: {fileID: 0}
   startingSkills:
   - {fileID: 11400000, guid: f1f2ce9d04775d8428c1df53c411ea44, type: 2}
   - {fileID: 11400000, guid: 18bcf5ee3a8efe947b0f3de8de0c5067, type: 2}
-  defaultMaxLifespan: 80
-  lifespanPerLevel: 1
-  isUndead: 0

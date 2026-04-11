@@ -35,7 +35,7 @@ public class UI_Shop : MonoBehaviour
     // --- 运行时数据 ---
     private ShopData currentShop;
     
-    // 👇 修改：选中项不再是单纯的 ItemData，而是整个商品条目，这样才能知道它的定制品质
+    // 选中项不再是单纯的 ItemData，而是整个商品条目，这样才能知道它的定制品质
     private ShopItemEntry selectedEntry; 
     // 卖出模式下，我们只关心 ItemData，可以用一个临时的 Entry 包裹它
     private ItemData selectedSellItem;

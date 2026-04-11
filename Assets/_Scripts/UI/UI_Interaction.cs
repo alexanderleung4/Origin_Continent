@@ -15,6 +15,8 @@ public class UI_Interaction : MonoBehaviour
     public Button combatButton;
     public Button closeButton;
 
+    public Button touchButton; // 新增触摸按钮
+
     private CharacterData currentTarget;
 
     private void Start()
@@ -23,6 +25,8 @@ public class UI_Interaction : MonoBehaviour
         if(talkButton) talkButton.onClick.AddListener(OnTalkClicked);
         if(tradeButton) tradeButton.onClick.AddListener(OnTradeClicked);
         if(combatButton) combatButton.onClick.AddListener(OnCombatClicked);
+        if(giftButton) giftButton.onClick.AddListener(OnGiftClicked);
+        if(touchButton) touchButton.onClick.AddListener(OnTouchClicked);
         CloseMenu(); 
     }
 
@@ -46,6 +50,14 @@ public class UI_Interaction : MonoBehaviour
         if (combatButton) combatButton.gameObject.SetActive(target.team == TeamType.Enemy || target.team == TeamType.Neutral);
         if (talkButton) talkButton.gameObject.SetActive(true);
         if (giftButton) giftButton.gameObject.SetActive(true);
+
+        if (touchButton) 
+        {
+            // 只有当策划打勾了 canBeTouched 并且配了 Prefab 时，这个按钮才会亮起
+            bool canTouch = target.canBeTouched && target.touchInteractionPrefab != null;
+            touchButton.gameObject.SetActive(canTouch);
+            touchButton.interactable = canTouch;
+        }
     }
 
     public void CloseMenu()
@@ -115,22 +127,78 @@ public class UI_Interaction : MonoBehaviour
         // --- 决策树 ---
         if (hasStory && !isStoryFinished)
         {
-            // 情况A: 有剧情且没做过 -> 播放剧情 CSV
+            // 情况A: 免费的主线/核心剧情
             Debug.Log($"[Dialogue] 播放新剧情: {currentTarget.currentStoryCSV}");
             DialogueManager.Instance.StartDialogueCSV(currentTarget.currentStoryCSV);
         }
-        else if (currentTarget.defaultDialogue != null)
+        else
         {
-            // 情况B: 剧情做完了 或 根本没剧情 -> 播放默认闲聊
-            if (isStoryFinished) Debug.Log("[Dialogue] 剧情已过，播放闲聊。");
-            DialogueManager.Instance.StartDialogue(currentTarget.defaultDialogue);
+            // 👇 情况B: 进入日常互动与羁绊判定 (开始消耗行动点)
+            if (AffinityManager.Instance != null && !AffinityManager.Instance.HasInteractionPoints())
+            {
+                if (UI_SystemToast.Instance != null) 
+                    UI_SystemToast.Instance.Show("No_AP", "今日社交互动次数已耗尽。", 0, null);
+                CloseMenu();
+                return;
+            }
+
+            // 1. 询问总控室：有已解锁但还没看过的羁绊专属剧情吗？
+            string pendingDialogueCSV = AffinityManager.Instance != null ? AffinityManager.Instance.GetPendingMilestoneDialogue(currentTarget) : null;
+
+            if (!string.IsNullOrEmpty(pendingDialogueCSV))
+            {
+                // 2. 有！播放专属羁绊剧情（主线级，不需要消耗日常行动点）
+                Debug.Log($"[Dialogue] 触发羁绊专属剧情: {pendingDialogueCSV}");
+                
+                // 写入防重复记忆锚点，表示“这篇我看过了”
+                if (GameManager.Instance != null) 
+                    GameManager.Instance.eventMemory.Add($"PlayedDialogue_{pendingDialogueCSV}");
+                
+                DialogueManager.Instance.StartDialogueCSV(pendingDialogueCSV);
+            }
+            else if (currentTarget.defaultDialogue != null)
+            {
+                // 3. 兜底逻辑：没有专属剧情，进入日常闲聊，消耗每日次数并涨好感
+                if (AffinityManager.Instance != null)
+                {
+                    AffinityManager.Instance.ConsumeInteractionPoint();
+                    AffinityManager.Instance.AddAffinity(currentTarget.characterID, AffinityType.Trust, 1); 
+                }
+                
+                if (isStoryFinished) Debug.Log("[Dialogue] 剧情已过，播放闲聊。");
+                DialogueManager.Instance.StartDialogue(currentTarget.defaultDialogue);
+            }
+            else
+            {
+                Debug.LogWarning("该角色无话可说。");
+            }
+        }
+            
+        CloseMenu();
+    }
+    
+    private void OnGiftClicked()
+    {
+        // 1. 拦截：检查是否有行动点
+        if (AffinityManager.Instance != null && !AffinityManager.Instance.HasInteractionPoints())
+        {
+            if (UI_SystemToast.Instance != null) 
+                UI_SystemToast.Instance.Show("No_AP", "今日精力已耗尽，请明天再来。", 0, null);
+            return;
+        }
+
+        // 2. 隐藏初始的主交互菜单 (但不清空数据，方便后续返回)
+        panelRoot.SetActive(false); 
+
+        // 3. 呼出专门的贴脸赠礼面板
+        if (UI_GiftMenu.Instance != null)
+        {
+            UI_GiftMenu.Instance.OpenMenu(currentTarget);
         }
         else
         {
-            Debug.LogWarning("该角色无话可说。");
+            Debug.LogError("场景中缺失 UI_GiftMenu 面板！");
         }
-            
-        CloseMenu(); 
     }
 
     private void OnTradeClicked()
@@ -144,5 +212,21 @@ public class UI_Interaction : MonoBehaviour
     {
         if (BattleManager.Instance != null) BattleManager.Instance.StartBattle(currentTarget);
         CloseMenu();
+    }
+
+    private void OnTouchClicked()
+    {
+        // 隐藏主菜单
+        panelRoot.SetActive(false); 
+
+        // 呼出触摸房间
+        if (UI_TouchRoom.Instance != null)
+        {
+            UI_TouchRoom.Instance.OpenMenu(currentTarget);
+        }
+        else
+        {
+            Debug.LogError("场景中缺失 UI_TouchRoom 面板！");
+        }
     }
 }

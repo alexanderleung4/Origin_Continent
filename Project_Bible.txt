@@ -20,6 +20,7 @@
 * QuestManager, SaveManager, SceneFader, ShopManager, TimeManager, VFXManager
 * ForgeManager (神锻与概率引擎)，EnhanceManager (强化运算逻辑与一键装填算法)
 * DialogueVFX (对话演出特效工具类，处理立绘滑动/背景渐变/闪白协程)
+* AffinityManager (三维羁绊数据中枢与每日精力总控)
 
 ### 📁 SaveSystem
 * SaveData (负责序列化落地的核心数据结构)
@@ -46,6 +47,7 @@
 * UI_Blacksmith, UI_RecipeSlot, UI_IngredientSlot，UI_EnhanceTab (强化交互终端)
 * UI_BattleAnnouncement (战斗公告演出组件，负责开始/胜利/失败三段独立演出)
 * UI_StageAdvance (关卡推进选择面板，通关后弹出继续/撤退选项)
+* UI_GiftMenu (贴脸大立绘展示与可赠送物品筛选独立容器)
 
 ### 📁 Utils (底层工具)
 * AutoDestroy, CSVLoader。
@@ -60,6 +62,7 @@
 * **死亡表现 (Corpse Protocol):** * 关闭所有 UI 交互组件 (`hpSlider`, `Button` 等)。
   * 若有 `bodySprite_Dead` 则替换并设为灰色，否则透明化隐藏。右侧行动条瞬间剔除。
 * **战斗公告演出 (Battle Announcement Protocol):** 战斗初始化时调用 `UI_BattleAnnouncement.PlayBattleStart()`，胜利/失败结算时分别调用 `PlayVictory()` / `PlayDefeat()`。演出通过 `CanvasGroup.alpha` 控制显隐，严禁用 `SetActive(false)` 隐藏根节点，否则协程无法启动。
+* **单位位移协议 (Unit Movement Protocol):** 技能释放前，攻击者根据 targetScope 执行位移演出。Single_Enemy/Single_Ally 冲向目标跟前（偏移80单位防止重叠）；All_Enemies/Random_Enemies 位移至 UI_Battle.centerPoint 中场点。所有坐标计算必须统一转换至Canvas坐标系后做差值，严禁直接使用不同父节点下的 anchoredPosition 进行比较。
 
 ### 🗺️ 关卡链推进协议 (Stage Chain Protocol)
 * **线性解锁:** StageData.nextStage 指向下一关，留空代表终点。主线用线性串联，支线各自独立。
@@ -129,6 +132,16 @@
 ### 💰 商业与背包资产协议 (Economy & Inventory Protocol)
 * 动态物价法则 (Dynamic Pricing): 绝对禁止在 UI_Shop 中直接读取 ItemData.price 作为最终售价。所有的买入价格必须经过 GameManager.GetDynamicBuyPrice() 处理，以兼容不同难度下的经济通胀。
 * 资产流入静默阀门 (Asset Inflow Valve): 所有的物品获取（无论是打怪掉落、任务奖励、还是商店购买），必须且只能通过 InventoryManager.AddItem() 统一入口流入背包。严禁绕过此接口直接操作 List。大批量发奖或读档恢复时，必须强制传入 isSilent = true 以阻断 UI_SystemToast 的雪崩式弹窗。
+
+### 💞 羁绊与日常交互协议 (Affinity & Interaction Protocol)
+* 每日精力法则 (AP Rule): 日常的闲聊、赠礼必须通过 `AffinityManager.ConsumeInteractionPoint()` 校验并扣除次数。次数随 `TimeManager.OnDayChanged` 跨天刷新。
+* 三维羁绊隔离 (Dimensional Isolation): 好感度不再是单轴数值，拆分为 Trust, Intimacy, Dependency。`ItemData` 通过 `isGiftable` 标记为礼物，并通过 `giftAffinityType` 决定增加哪个维度的数值。
+* 表现与数据解耦 (Decoupled Gifting): 赠礼时绝对禁止挪用全局 `UI_Inventory`。必须呼出独立的 `UI_GiftMenu` 容器，该容器仅负责展示并调用 `InventoryManager` 扣除数据，防止UI状态机污染。
+
+### 🏆 羁绊里程碑与发奖协议 (Affinity Milestone Protocol)
+* 数据驱动发奖: 严禁在代码中硬编码好感度奖励。所有羁绊解锁条件必须配置在 `CharacterData.affinityMilestones` 列表中。
+* 发奖防爆机制: 奖励道具发放时，系统会自动进行图纸与实体的类型校验。若奖励为装备 (`EquipmentData`)，系统必须现场铸造 `RuntimeEquipment` 肉身并重算白值乘区后才可塞入背包，绝对禁止将静态图纸存入存档。
+* 记忆锚点防刷 (Anti-Farm Anchor): 每个里程碑在达标并成功发放奖励后，必须向 `GameManager.eventMemory` 写入格式为 `Milestone_Claimed_[角色ID]_[维度]_[数值]` 的永久锚点。读档或二次触发时凭此锚点进行拦截。
 
 ====================================================================
 ## 3. 极易混淆变量警示录 (Variable Blacklist/Whitelist)

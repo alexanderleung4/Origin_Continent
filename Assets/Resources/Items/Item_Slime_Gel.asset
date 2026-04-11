@@ -14,11 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemID: Item_Slime_Gel
   itemName: "\u53F2\u83B1\u59C6\u7C98\u6DB2"
-  description: 
+  description: "\u53F2\u83B1\u59C6\u8EAB\u4E0A\u6389\u7684\u7C98\u6DB2"
   icon: {fileID: 21300000, guid: 1c830e8897d3dd1438323ef805bf18e8, type: 3}
   type: 1
   isStackable: 1
   maxStack: 99
+  buyPrice: 0
+  sellPrice: 50
+  isSellable: 1
   healAmount: 0
   manaAmount: 0
   staminaAmount: 0
+  feedExpValue: 10
+  isGiftable: 1
+  giftAffinityType: 1
+  giftAffinityValue: 10

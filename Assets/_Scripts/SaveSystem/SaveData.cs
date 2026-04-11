@@ -32,8 +32,14 @@ public class SaveData
     // --- 背包系统 (Inventory) ---
     public List<InventorySaveData> inventory; 
 
-    // 👇 新增：商店库存记忆 (Shop Stocks)
+    // 商店库存记忆 (Shop Stocks)
     public List<ShopSaveData> shopStates;
+
+    // 三维度羁绊记忆 (Affinity States)
+    public List<CharacterAffinitySaveNode> affinityStates;
+    
+    // 每日行动点数记忆 (防止S/L大法无限刷)
+    public int currentInteractionPoints;
 }
 
 // ===================================================================================
@@ -144,4 +150,13 @@ public struct ShopItemStockSaveData
 {
     public string itemID; // 物品的文件名
     public int currentStock;
+}
+
+[System.Serializable]
+public struct CharacterAffinitySaveNode
+{
+    public string characterID;
+    public int trust;       // 信任度
+    public int intimacy;    // 亲密度
+    public int dependency;  // 依赖度
 }

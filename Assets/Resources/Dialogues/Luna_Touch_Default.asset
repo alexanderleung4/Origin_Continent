@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 999a2b51f8e9f234896df82e959bd8cd, type: 3}
+  m_Name: Luna_Touch_Default
+  m_EditorClassIdentifier: 
+  dialogueID: 
+  lines:
+  - speakerName: Luna
+    content: "\u4E3B\u4EBA\uFF0C\u8BF7\u4E0D\u8981\u8FD9\u6837\u76EF\u7740\u6211\u770B\u2026\u2026"
+    expression: 
+    backgroundID: 
+    portrait: {fileID: 0}
+    eventCommand: 
+    vfxType: 0

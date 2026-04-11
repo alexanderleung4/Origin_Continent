@@ -181,6 +181,12 @@ public class SaveManager : MonoBehaviour
         else
             data.shopStates = new List<ShopSaveData>();
 
+        // 👇 --- 核心新增 6：羁绊与互动精力记忆保存 ---
+        if (AffinityManager.Instance != null)
+        {
+            AffinityManager.Instance.SaveTo(data);
+        }
+
         // 写入硬盘
         string path = GetPath(saveID);
         File.WriteAllText(path, JsonUtility.ToJson(data, true));
@@ -326,6 +332,11 @@ public class SaveManager : MonoBehaviour
         if (ShopManager.Instance != null && data.shopStates != null)
         {
             ShopManager.Instance.RestoreStockState(data.shopStates);
+        }
+        // 👇 --- 核心新增 6：羁绊与互动精力记忆读取 ---
+        if (AffinityManager.Instance != null)
+        {
+            AffinityManager.Instance.LoadFrom(data);
         }
 
         Debug.Log($"[Load] 读档完成。");

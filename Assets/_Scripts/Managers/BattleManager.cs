@@ -612,10 +612,11 @@ public class BattleManager : MonoBehaviour
                     null, out targetCanvas);
 
                 // 在Canvas坐标系下计算方向和目标点
-                float offset = attacker.isPlayerSide ? -80f : 80f;
+                float offset = attacker.isPlayerSide ? -80f : 120f;
                 Vector2 moveDirection = (targetCanvas - attackerCanvas).normalized;
-                Vector2 targetAnchor = attackerRT.anchoredPosition + moveDirection * (Vector2.Distance(attackerCanvas, targetCanvas) - Mathf.Abs(offset));
-
+                float distance = Vector2.Distance(attackerCanvas, targetCanvas);
+                float stopDistance = Mathf.Abs(offset); // 在目标前方停下的距离
+                Vector2 targetAnchor = attackerRT.anchoredPosition + moveDirection * (distance - stopDistance);
                 yield return StartCoroutine(MoveToTarget(attackerRT, targetAnchor, 0.15f));
                 didMove = true;
             }

@@ -26,9 +26,21 @@ public enum TeamType
     Neutral     // 中立 (NPC)
 }
 
+public enum MilestoneRewardType { UnlockDialogue, GiveItem }//好感度，剧情奖励等
+
 // ===================================================================================
 // 2. 数据类定义
 // ===================================================================================
+
+[System.Serializable]
+public struct AffinityMilestone
+{
+    public AffinityType requirementType; // 要求维度 (如 Intimacy)
+    public int requirementValue;         // 要求数值 (如 50)
+    public MilestoneRewardType rewardType; // 奖励类型
+    public string rewardParameter;       // CSV文件名 或 ItemID
+    public string milestoneDescription;  // 弹窗提示文案 (e.g., "解锁了莉莉丝的秘密往事")
+}
 
 [System.Serializable]
 public struct DefeatCGConfig
@@ -127,6 +139,13 @@ public class CharacterData : ScriptableObject
         }
         return defaultCG;
     }
+    [Header("💞 羁绊里程碑 (Affinity Milestones)")]
+    public List<AffinityMilestone> affinityMilestones;
+
+    [Header("👉 Touch Interaction (触摸互动)")]
+    public bool canBeTouched = true; // 总开关：大汉和怪物把这个关掉
+    [Tooltip("包含透明点击热点和立绘的触摸预制体")]
+    public GameObject touchInteractionPrefab;
 
     [Header("💪 Skills (技能)")]
     public List<SkillData> startingSkills; // ✅ [核心] 初始技能
