@@ -7,7 +7,7 @@ public enum DialogueVFXType
     None, FadeIn, FadeOut, ShakeLight, ShakeHeavy, FlashWhite, PortraitSlideIn, PortraitSlideOut, BGFade
 }
 
-// 🎯 新增：分支选项结构体 (支持拖拽或写CSV)
+// 分支选项结构体 (支持拖拽或写CSV)
 [System.Serializable]
 public class DialogueChoice
 {
@@ -15,6 +15,8 @@ public class DialogueChoice
     public string nextID;          // 选后跳转的下文ID (CSV内部寻址 或 新CSV名)
     public DialogueData nextAsset; // 选后跳转的新Asset (Asset寻址)
     public string eventCommand;    // 选后瞬间触发的事件 (如 Affinity:Luna:Trust:5)
+    // 第7列的条件锁指令 (如 Require:Luna:Intimacy:50)
+    public string conditionCommand;
 }
 
 // 🎯 修复：依据蓝队报告，严格改为 class，避免 List 嵌套序列化丢失

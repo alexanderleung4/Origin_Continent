@@ -76,7 +76,9 @@ public static class CSVLoader
                     choice.choiceText = CleanQuotes(nextValues[2]); // Content列：按钮上的文字
                     choice.nextID = (nextValues.Length > 4) ? CleanQuotes(nextValues[4]) : ""; // NextID列：点击后跳去哪
                     choice.eventCommand = (nextValues.Length > 5) ? CleanQuotes(nextValues[5]) : ""; // Event列：触发什么事（加好感）
-                    
+                    // 读取第7列作为条件锁指令（列数不足则自动补空字符串，蓝队容错机制生效）
+                    choice.conditionCommand = (nextValues.Length > 6) ? CleanQuotes(nextValues[6]) : "";
+
                     newLine.choices.Add(choice);
                 }
                 else

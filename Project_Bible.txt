@@ -50,6 +50,7 @@
 * UI_GiftMenu (贴脸大立绘展示与可赠送物品筛选独立容器)
 * UI_TouchRoom (沉浸式触摸隔离舱，动态加载互动模型)
 * UI_TouchHotspot (万能触摸热点组件，挂载于透明Image)
+* UI_ChoicePanel (独立对话选项模态窗，带防穿透射线阻挡层)
 
 ### 📁 Utils (底层工具)
 * AutoDestroy, CSVLoader。
@@ -91,6 +92,10 @@
   * `Portrait:slidein` / `Portrait:slideout` (立绘滑入滑出)
   * `BG:fade` (背景渐变切换)
 * **Asset双轨触发:** DialogueLine新增 `vfxType` 枚举字段，Asset配置的对话可直接在Inspector选择特效，无需写指令字符串。
+* 网状叙事与选项路由 (Branching & Choice Protocol): 
+  - 表现层绝对隔离: `DialogueManager` 严禁直接实例化按钮，必须交由 `UI_ChoicePanel` 接管 UI 渲染。
+  - 数据解析前瞻: CSV 中选项的分支必须以 `Speaker: Choice` 标识，由解析器向后嗅探组装。
+  - 同表/跨表兼容: 选项的 `nextID` 寻址优先在当前缓存的 CSV 列表中检索 (无损跳转)；若未命中则视为跨表路由，清空当前队列加载新表。
 
 ### 📢 全局播报系统 (System Toast Protocol)
 * **底层拦截原则:** 播报触发必须深深埋在最底层的数据变动处 (如 `InventoryManager.AddItem` 或 `GainExp` 结算循环后)，严禁在业务逻辑层 (如开宝箱的瞬间) 重复写弹窗代码。

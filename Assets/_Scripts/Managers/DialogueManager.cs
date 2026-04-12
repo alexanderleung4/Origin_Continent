@@ -275,7 +275,7 @@ public class DialogueManager : MonoBehaviour
         {
             // 有选项：瞬间关闭继续按钮的拦截护盾，呼出专门的选项面板
             if (continueButton != null) continueButton.gameObject.SetActive(false);
-            UI_ChoicePanel.Instance.ShowChoices(currentChoices, OnChoiceSelected);
+            UI_ChoicePanel.Instance.ShowChoices(currentChoices, OnChoiceSelected, EndDialogue);
         }
         else
         {

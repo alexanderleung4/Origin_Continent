@@ -10,8 +10,8 @@ public class UI_ChoicePanel : MonoBehaviour
 
     [Header("UI 容器")]
     public GameObject panelRoot;
-    public Transform buttonContainer; // 挂载 Vertical Layout Group 的节点
-    public GameObject choiceButtonPrefab; // 预制体：带 Button 和 TextMeshProUGUI
+    public Transform buttonContainer; 
+    public GameObject choiceButtonPrefab; 
 
     private void Awake()
     {
@@ -20,25 +20,60 @@ public class UI_ChoicePanel : MonoBehaviour
         panelRoot.SetActive(false);
     }
 
-    public void ShowChoices(List<DialogueChoice> choices, Action<DialogueChoice> onSelected)
+    // 🎯 新增 onLeaveFallback 委托，用于蓝队的防死锁兜底
+    public void ShowChoices(List<DialogueChoice> choices, Action<DialogueChoice> onSelected, Action onLeaveFallback = null)
     {
-        // 1. 清空旧按钮
         foreach (Transform child in buttonContainer) Destroy(child.gameObject);
 
-        // 2. 生成新按钮
+        int unlockedCount = 0; // 记录有多少个按钮是可以点的
+
         foreach (var choice in choices)
         {
             GameObject btnObj = Instantiate(choiceButtonPrefab, buttonContainer);
-            btnObj.GetComponentInChildren<TextMeshProUGUI>().text = choice.choiceText;
-            
             Button btn = btnObj.GetComponent<Button>();
-            
-            // 捕获局部变量防止闭包陷阱
-            DialogueChoice capturedChoice = choice; 
-            btn.onClick.AddListener(() => 
+            TextMeshProUGUI txt = btnObj.GetComponentInChildren<TextMeshProUGUI>();
+
+            // ==========================================
+            // 🎯 呼叫黑盒进行条件查验
+            // ==========================================
+            ConditionResult result = ConditionEvaluator.Evaluate(choice.conditionCommand);
+
+            if (result.isMet)
             {
-                panelRoot.SetActive(false); // 点击瞬间隐藏自身
-                onSelected?.Invoke(capturedChoice); // 回调通知 DialogueManager
+                txt.text = choice.choiceText;
+                btn.interactable = true;
+                unlockedCount++;
+
+                DialogueChoice capturedChoice = choice; 
+                btn.onClick.AddListener(() => 
+                {
+                    panelRoot.SetActive(false); 
+                    onSelected?.Invoke(capturedChoice); 
+                });
+            }
+            else
+            {
+                // 被锁住了！加上提示文案，并禁用点击
+                txt.text = $"{choice.choiceText}{result.lockHint}";
+                btn.interactable = false;
+            }
+        }
+
+        // ==========================================
+        // 防死锁协议：如果全部都被锁住了
+        // ==========================================
+        if (unlockedCount == 0)
+        {
+            GameObject fallbackBtnObj = Instantiate(choiceButtonPrefab, buttonContainer);
+            Button fBtn = fallbackBtnObj.GetComponent<Button>();
+            TextMeshProUGUI fTxt = fallbackBtnObj.GetComponentInChildren<TextMeshProUGUI>();
+
+            fTxt.text = "<color=#ff5555>【离开】(前置条件未满足)</color>";
+            fBtn.interactable = true;
+            fBtn.onClick.AddListener(() =>
+            {
+                panelRoot.SetActive(false);
+                onLeaveFallback?.Invoke(); // 通知 DialogueManager 强制结束对话
             });
         }
 
