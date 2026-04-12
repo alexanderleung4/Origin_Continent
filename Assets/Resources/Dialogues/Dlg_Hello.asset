@@ -14,9 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dialogueID: 
   lines:
-  - speakerName: "\u5546\u4EBA"
+  - lineID: 
+    speakerName: "\u5546\u4EBA"
     content: "\u4F60\u597D"
     expression: 
     backgroundID: 
     portrait: {fileID: 21300000, guid: c0a255036e84f264dafd30bbae54d71e, type: 3}
     eventCommand: 
+    vfxType: 0
+    choices:
+    - choiceText: 
+      nextID: 
+      nextAsset: {fileID: 0}
+      eventCommand: 

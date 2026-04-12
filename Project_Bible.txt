@@ -48,6 +48,8 @@
 * UI_BattleAnnouncement (战斗公告演出组件，负责开始/胜利/失败三段独立演出)
 * UI_StageAdvance (关卡推进选择面板，通关后弹出继续/撤退选项)
 * UI_GiftMenu (贴脸大立绘展示与可赠送物品筛选独立容器)
+* UI_TouchRoom (沉浸式触摸隔离舱，动态加载互动模型)
+* UI_TouchHotspot (万能触摸热点组件，挂载于透明Image)
 
 ### 📁 Utils (底层工具)
 * AutoDestroy, CSVLoader。
@@ -137,6 +139,10 @@
 * 每日精力法则 (AP Rule): 日常的闲聊、赠礼必须通过 `AffinityManager.ConsumeInteractionPoint()` 校验并扣除次数。次数随 `TimeManager.OnDayChanged` 跨天刷新。
 * 三维羁绊隔离 (Dimensional Isolation): 好感度不再是单轴数值，拆分为 Trust, Intimacy, Dependency。`ItemData` 通过 `isGiftable` 标记为礼物，并通过 `giftAffinityType` 决定增加哪个维度的数值。
 * 表现与数据解耦 (Decoupled Gifting): 赠礼时绝对禁止挪用全局 `UI_Inventory`。必须呼出独立的 `UI_GiftMenu` 容器，该容器仅负责展示并调用 `InventoryManager` 扣除数据，防止UI状态机污染。
+* 可视触摸与沉浸引擎 (Visual Touch & Immersive Protocol): 
+  - 架构解耦: 角色的触摸热点必须完全封装在独立的 Prefab 中，严禁在预制体内嵌套 Canvas。
+  - 沉浸冲突阻断: 当玩家进入 UI_TouchRoom 时，必须强制开启 DialogueManager.IsImmersiveMode，屏蔽左右原生立绘，交由大立绘与玩家进行视觉交互。
+  - 双轨回退法则: UI_TouchHotspot 必须同时暴露 Asset 与 CSV 插槽，优先执行 Asset，若皆为空则输出警告，严防空指针异常。
 
 ### 🏆 羁绊里程碑与发奖协议 (Affinity Milestone Protocol)
 * 数据驱动发奖: 严禁在代码中硬编码好感度奖励。所有羁绊解锁条件必须配置在 `CharacterData.affinityMilestones` 列表中。

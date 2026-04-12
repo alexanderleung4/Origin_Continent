@@ -4,34 +4,39 @@ using System.Collections.Generic;
 [System.Serializable]
 public enum DialogueVFXType
 {
-    None,
-    FadeIn,       // 屏幕淡入
-    FadeOut,      // 屏幕淡出
-    ShakeLight,   // 轻震动
-    ShakeHeavy,   // 重震动
-    FlashWhite,   // 闪白
-    PortraitSlideIn,  // 立绘滑入
-    PortraitSlideOut, // 立绘滑出
-    BGFade        // 背景渐变切换
+    None, FadeIn, FadeOut, ShakeLight, ShakeHeavy, FlashWhite, PortraitSlideIn, PortraitSlideOut, BGFade
 }
+
+// 🎯 新增：分支选项结构体 (支持拖拽或写CSV)
 [System.Serializable]
-public struct DialogueLine
+public class DialogueChoice
 {
-    public string speakerName; // 谁在说话
+    public string choiceText;      // 按钮显示的文字
+    public string nextID;          // 选后跳转的下文ID (CSV内部寻址 或 新CSV名)
+    public DialogueData nextAsset; // 选后跳转的新Asset (Asset寻址)
+    public string eventCommand;    // 选后瞬间触发的事件 (如 Affinity:Luna:Trust:5)
+}
+
+// 🎯 修复：依据蓝队报告，严格改为 class，避免 List 嵌套序列化丢失
+[System.Serializable]
+public class DialogueLine
+{
+    public string lineID;       // 本句的唯一ID (用于被选项跳转寻址)
+    public string speakerName;  // 谁在说话
     [TextArea] public string content; // 说什么
-    public string expression; // 表情 (预留)
-    public string backgroundID; // 用于存储全屏 CG 的文件名 (Resources/Backgrounds/)
-    // 立绘图片
-    public Sprite portrait;
-    // 事件指令 (例如 "AddGold:100", "Battle:Slime")
-    public string eventCommand;
-    // 演出特效指令（Asset配置用，CSV用eventCommand代替）
-    public DialogueVFXType vfxType;
+    public string expression;   // 表情
+    public string backgroundID; // 背景ID
+    public Sprite portrait;     // 立绘
+    public string eventCommand; // 触发事件
+    public DialogueVFXType vfxType; // 特效
+
+    // 🎯 新增：该句挂载的选项列表
+    public List<DialogueChoice> choices = new List<DialogueChoice>(); 
 }
 
 [CreateAssetMenu(fileName = "NewDialogue", menuName = "Origin/Dialogue Data")]
 public class DialogueData : ScriptableObject
 {
     public string dialogueID;
-    public List<DialogueLine> lines; // 对话列表
+    public List<DialogueLine> lines; 
 }

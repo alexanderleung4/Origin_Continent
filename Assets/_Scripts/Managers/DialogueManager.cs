@@ -27,6 +27,10 @@ public class DialogueManager : MonoBehaviour
 
     // --- 状态流转控制 ---
     private Queue<DialogueLine> linesQueue = new Queue<DialogueLine>();
+    // 👇 新增：用于内部跨行跳转的完整表单缓存
+    private List<DialogueLine> currentDialogueList = new List<DialogueLine>();
+    // 👇 新增：缓存当前句子的选项
+    private List<DialogueChoice> currentChoices;
     public bool IsActive { get; private set; }
     public bool IsImmersiveMode { get; set; } = false; // 沉浸模式：开启时仅显示对话框，隐藏立绘
     
@@ -98,7 +102,12 @@ public class DialogueManager : MonoBehaviour
         }
 
         linesQueue.Clear();
-        foreach (var line in lines) linesQueue.Enqueue(line);
+        currentDialogueList.Clear(); // 清空旧表
+        foreach (var line in lines) 
+        {
+            linesQueue.Enqueue(line);
+            currentDialogueList.Add(line); // 存入缓存表
+        }
 
         DisplayNextLine();
     }
@@ -135,10 +144,13 @@ public class DialogueManager : MonoBehaviour
             if (typingCoroutine != null) StopCoroutine(typingCoroutine);
             if (contentText != null) contentText.text = currentLineText;
             isTyping = false;
+            // 玩家强行跳过打字后，立刻检查是否需要弹选项
+            CheckAndShowChoices();
         }
         else
         {
             // 如果打字完毕，点击则播放下一句
+            // (如果有选项，continueButton 已经被 CheckAndShowChoices 关了，玩家点不到这里)
             DisplayNextLine();
         }
     }
@@ -238,19 +250,75 @@ public class DialogueManager : MonoBehaviour
             }
         }
 
-        // --- D. 启动打字机 ---
+        // --- D. 缓存选项并启动打字机 ---
+        currentChoices = line.choices; // 将当前句的选项存入缓存
+
         if (typingCoroutine != null) StopCoroutine(typingCoroutine);
         typingCoroutine = StartCoroutine(TypeLine(currentLineText));
 
         // --- E. 事件触发 ---
-        if (!string.IsNullOrEmpty(line.eventCommand))
-        {
-            HandleEvent(line.eventCommand);
-        }
+        if (!string.IsNullOrEmpty(line.eventCommand)) HandleEvent(line.eventCommand);
+        
         // --- F. Asset配置的VFX触发 ---
-        if (line.vfxType != DialogueVFXType.None)
+        if (line.vfxType != DialogueVFXType.None) HandleVFXType(line.vfxType);
+
+        // 🛡️ 核心 UX 修复：无论有没有选项，打字期间必须保持继续按钮开启！
+        // 这样玩家才能点击屏幕跳过漫长的打字过程。选项面板的呼出交由打字结束时处理。
+        if (continueButton != null) continueButton.gameObject.SetActive(true);
+        
+    }
+
+    // 核心枢纽：打字结束或被跳过时，检查并呼出选项
+    private void CheckAndShowChoices()
+    {
+        if (currentChoices != null && currentChoices.Count > 0)
         {
-            HandleVFXType(line.vfxType);
+            // 有选项：瞬间关闭继续按钮的拦截护盾，呼出专门的选项面板
+            if (continueButton != null) continueButton.gameObject.SetActive(false);
+            UI_ChoicePanel.Instance.ShowChoices(currentChoices, OnChoiceSelected);
+        }
+        else
+        {
+            // 没选项：保持继续按钮开启，等待玩家点击进入下一句
+            if (continueButton != null) continueButton.gameObject.SetActive(true);
+        }
+    }
+    // 精准的路由与结算枢纽
+    private void OnChoiceSelected(DialogueChoice choice)
+    {
+        // 1. 点击瞬间结算事件 (比如扣除金币、加好感度)
+        if (!string.IsNullOrEmpty(choice.eventCommand)) HandleEvent(choice.eventCommand);
+
+        // 2. 路由跳转逻辑
+        if (choice.nextAsset != null)
+        {
+            StartDialogue(choice.nextAsset); // 直接切 Asset
+        }
+        else if (!string.IsNullOrEmpty(choice.nextID))
+        {
+            // 尝试在当前 CSV 缓存表中寻找目标 ID
+            int jumpIndex = currentDialogueList.FindIndex(l => l.lineID == choice.nextID);
+            
+            if (jumpIndex != -1)
+            {
+                // 表内跳转：重构队列，不会丢失当前CSV的上下文
+                linesQueue.Clear();
+                for (int i = jumpIndex; i < currentDialogueList.Count; i++)
+                {
+                    linesQueue.Enqueue(currentDialogueList[i]);
+                }
+                DisplayNextLine();
+            }
+            else
+            {
+                // 找不到，说明是跨表路由！加载新 CSV
+                StartDialogueCSV(choice.nextID);
+            }
+        }
+        else
+        {
+            // 没有配置下文，直接关闭对话
+            EndDialogue();
         }
     }
 
@@ -302,6 +370,8 @@ public class DialogueManager : MonoBehaviour
             yield return new WaitForSeconds(typeSpeed);
         }
         isTyping = false;
+        // 自然打字结束时，检查是否需要弹选项
+        CheckAndShowChoices();
     }
 
     private void EndDialogue()
@@ -479,6 +549,19 @@ public class DialogueManager : MonoBehaviour
             case "BG":
                 if (value == "fade" && cgBackground != null)
                     StartCoroutine(DialogueVFX.CrossFadeBackground(cgBackground, cgBackground.sprite));
+                break;
+            // 新增好感度解析指令 -> Affinity:Luna:Intimacy:5
+            case "Affinity":
+                if (parts.Length >= 4)
+                {
+                    string charID = parts[1].Trim();
+                    if (System.Enum.TryParse(parts[2].Trim(), out AffinityType affType) && 
+                        int.TryParse(parts[3].Trim(), out int amount))
+                    {
+                        if (AffinityManager.Instance != null)
+                            AffinityManager.Instance.AddAffinity(charID, affType, amount);
+                    }
+                }
                 break;
                             
             }

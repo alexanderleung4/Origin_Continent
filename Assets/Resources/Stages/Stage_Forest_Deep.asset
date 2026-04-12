@@ -23,7 +23,7 @@ MonoBehaviour:
   - enemyData: {fileID: 11400000, guid: fd78d30b442bd44498e6999c28f9546d, type: 2}
     slotIndex: 1
   nextStage: {fileID: 11400000, guid: c1c34aee7ad9e7a488faae566592260b, type: 2}
-  autoAdvance: 1
+  autoAdvance: 0
   advancePrompt: "\u662F\u5426\u7EE7\u7EED\u524D\u8FDB\uFF1F"
   clearExp: 0
   clearGold: 0

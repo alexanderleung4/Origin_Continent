@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 999a2b51f8e9f234896df82e959bd8cd, type: 3}
+  m_Name: Test_Touch_Asset
+  m_EditorClassIdentifier: 
+  dialogueID: test_touch_01
+  lines:
+  - lineID: line_1
+    speakerName: Luna
+    content: "\u6307\u6325\u5B98\uFF0C\u7A81\u7136\u6233\u4EBA\u5BB6\u7684\u8138\u2026\u2026\u662F\u60F3\u8981\u6D4B\u8BD5\u4EC0\u4E48\u65B0\u529F\u80FD\u5417\uFF1F"
+    expression: 
+    backgroundID: 
+    portrait: {fileID: 0}
+    eventCommand: ShakeLight
+    vfxType: 0
+    choices:
+    - choiceText: "\u6D4B\u8BD5\u52A0\u597D\u611F\uFF01"
+      nextID: 
+      nextAsset: {fileID: 0}
+      eventCommand: Affinity:NPC_Luna:Intimacy:10
+    - choiceText: "\u70B9\u9519\u4E86\uFF0C\u62B1\u6B49\u3002"
+      nextID: 
+      nextAsset: {fileID: 0}
+      eventCommand: 

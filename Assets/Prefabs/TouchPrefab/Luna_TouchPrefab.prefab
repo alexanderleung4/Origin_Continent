@@ -95,7 +95,7 @@ MonoBehaviour:
     requiredLevel: 10
     dialogueAsset: {fileID: 11400000, guid: 02b9eb54ad9f5114c956bb5d8a1d9781, type: 2}
     dialogueCSV: 
-  defaultDialogueAsset: {fileID: 11400000, guid: cb4218323bbc13f4da0fbb756ab3cfce, type: 2}
+  defaultDialogueAsset: {fileID: 11400000, guid: d8c6ed66c7a9c59438b1f08540dc8694, type: 2}
   defaultDialogueCSV: 
 --- !u!1 &6308236857411334134
 GameObject:

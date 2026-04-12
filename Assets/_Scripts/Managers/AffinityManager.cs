@@ -75,7 +75,19 @@ public class AffinityManager : MonoBehaviour
             case AffinityType.Dependency: runtimeAffinity[characterID].dependency += amount; break;
         }
         Debug.Log($"[Affinity] {characterID} 的 {type} 增加了 {amount}");
-        // 👇 新增：每次好感增加，立刻检查是否触发里程碑
+        // 👇 新增：无论通过什么途径（送礼/对话选项）增加好感，都强制触发全局悬浮窗！
+        if (UI_SystemToast.Instance != null)
+        {
+            // 利用 mergeID (如 Affinity_Luna_Intimacy)，即使连续加好感也会智能聚合并刷新停留时间
+            UI_SystemToast.Instance.Show(
+                $"Affinity_{characterID}_{type}", 
+                $"与 {characterID} 的 {type} 提升了 {amount} 点", 
+                0, 
+                null
+            );
+        }
+
+        // 检查里程碑
         CheckAndTriggerMilestones(characterID);
     }
 
